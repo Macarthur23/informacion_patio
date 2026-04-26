@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patio Pro - Gestión Mixta Dinámica</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --sidebar-bg: #212529;
+            --sidebar-active: #34495e;
+            --card: #2d2d2d;
+            --text: #ffffff;
+            --accent: #3498db;
+            --pallet: #e67e22;
+            --obstacle: #444;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --objeto: #7f8c8d;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            user-select: none;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0; top: 0;
+            z-index: 2000;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar-user { padding: 20px; display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 40px; height: 40px; background: #444; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+
+        .sidebar-menu { flex: 1; padding: 10px; overflow-y: auto; }
+        .menu-item {
+            display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 5px; color: #bdc3c7;
+        }
+        .menu-item:hover { background: rgba(255, 255, 255, 0.05); color: white; }
+        .menu-item.active { background: var(--sidebar-active); color: white; }
+        .menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Paneles de sección */
+        .section-panel { display: none; width: 100%; }
+        .section-panel.active { display: block; }
+
+        .controles {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+            position: sticky;
+            top: 10px;
+            z-index: 1000;
+        }
+
+        .btn { padding: 12px 24px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; }
+        .btn-add { background-color: var(--success); }
+
+        /* --- ESTILOS LPN SIN CONSUMIR --- */
+        .lpn-container { max-width: 1000px; margin: 0 auto; }
+        .lpn-grid-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .lpn-card {
+            background: var(--card);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #444;
+            transition: transform 0.2s;
+        }
+        .lpn-card img { width: 100%; height: 180px; object-fit: cover; border-bottom: 1px solid #444; }
+        .lpn-card-info { padding: 12px; }
+        .lpn-card-info p { margin: 5px 0; font-size: 0.85rem; color: #ccc; }
+        .lpn-card-info .date { font-size: 0.7rem; color: #888; }
+
+        /* --- ESTILOS MAPA (SIN TOCAR) --- */
+        .patio-grid {
+            display: grid;
+            grid-template-columns: repeat(15, 60px); 
+            grid-auto-rows: 60px;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 50px;
+        }
+
+        .posicion {
+            background: var(--card); width: 60px; height: 60px; border-radius: 8px; border: 2px solid #444;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; cursor: move;
+        }
+        .posicion.es-objeto { background: var(--objeto) !important; border-color: #bdc3c7; }
+        .btn-cerrar {
+            position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border-radius: 50%;
+            width: 22px; height: 22px; font-size: 12px; display: none; justify-content: center; align-items: center; border: 2px solid #fff; z-index: 150;
+        }
+        .posicion.abierto .btn-cerrar { display: flex; }
+        .obstaculo {
+            grid-column: 9; grid-row: 1 / span 4; background: var(--obstacle); border: 3px solid #222; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center; font-weight: bold; color: #888; font-size: 0.6rem; text-align: center;
+        }
+        .posicion.abierto { border-color: var(--accent); z-index: 500; }
+        .posicion.abierto .detalle-pila { display: flex; }
+        .nivel-badge { font-size: 1.2rem; font-weight: bold; color: var(--accent); pointer-events: none; }
+        .id-piso { font-size: 0.6rem; opacity: 0.7; position: absolute; top: 2px; left: 2px; pointer-events: none; }
+        .icon-objeto { font-size: 1.2rem; display: none; }
+        .posicion.es-objeto .icon-objeto { display: block; }
+        .posicion.es-objeto .nivel-badge { display: none; }
+
+        .detalle-pila {
+            display: none; position: absolute; bottom: 115%; left: -50px; width: 170px; background: #333;
+            border-radius: 8px; padding: 10px; z-index: 100; border: 1px solid var(--accent); flex-direction: column-reverse; gap: 5px;
+        }
+        .fila-btn {
+            background: #444; border: 1px solid #555; color: white; padding: 5px; border-radius: 4px; font-size: 0.7rem; cursor: grab;
+            text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .fila-btn.con-datos { border-left: 4px solid var(--pallet); }
+        .fila-btn.objeto-datos { border-left: 4px solid #333; background: #666; }
+        .btn-objeto-trigger { background: #2980b9; color: white; font-weight: bold; margin-top: 5px; border: 1px solid #fff; cursor: pointer; }
+        .drag-over { background: rgba(52, 152, 219, 0.4) !important; border: 1px solid white !important; }
+
+        /* MODALES */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center;
+        }
+        .modal-content { background: #2d2d2d; padding: 20px; border-radius: 12px; width: 300px; border: 1px solid var(--accent); }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 0.7rem; color: #aaa; margin-bottom: 3px; }
+        .form-group input, .form-group textarea {
+            width: 100%; background: #1a1a1a; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; box-sizing: border-box;
+        }
+        .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-save { background: var(--accent); flex: 1; }
+        .btn-cancel { background: #555; flex: 1; }
+        #video-preview { width: 100%; background: #000; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header"><span>📦 PatioPro</span></div>
+        <div class="sidebar-user">
+            <div class="user-avatar">R</div>
+            <div>
+                <div style="font-weight: bold; font-size: 0.9rem;">Rihanna</div>
+                <div style="font-size: 0.7rem; color: #888;">Administrador</div>
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item active" onclick="mostrarSeccion('mapa-seccion')">
+                <span class="menu-icon">🏠</span><span>Mapa de Patio</span>
+            </div>
+            <div class="menu-item" onclick="mostrarSeccion('lpn-seccion')">
+                <span class="menu-icon">📑</span><span>LPN sin consumir</span>
+            </div>
+            <div class="menu-item"><span class="menu-icon">⚙️</span><span>Objetos y Activos</span></div>
+            <div class="menu-item"><span class="menu-icon">📊</span><span>Estadísticas</span></div>
+            <div class="menu-item" style="margin-top: 20px; color: var(--danger);"><span class="menu-icon">🚪</span><span>Cerrar Sesión</span></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="mapa-seccion" class="section-panel active">
+            <h2 style="text-align: center;">Mapa Logístico de Patio</h2>
+            <div class="controles">
+                <button class="btn btn-add" onclick="agregarPosicion()">+ Añadir Espacio</button>
+            </div>
+            <div class="patio-grid" id="patio"></div>
+        </div>
+
+        <div id="lpn-seccion" class="section-panel">
+            <div class="lpn-container">
+                <h2 style="text-align: center;">LPN sin consumir</h2>
+                <div class="controles">
+                    <button class="btn btn-add" onclick="abrirCamara()">+ Agregar Foto y Obs</button>
+                </div>
+                <div class="lpn-grid-list" id="lpn-lista"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalCamara" class="modal">
+        <div class="modal-content" style="width: 350px;">
+            <h3 style="font-size: 1rem; color: var(--accent);">Capturar LPN</h3>
+            <video id="video" autoplay playsinline id="video-preview" style="width:100%; border-radius:8px;"></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <div class="form-group" style="margin-top:10px;">
+                <label>Observación</label>
+                <textarea id="lpn-obs" rows="3" placeholder="Escribe algo..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-save" onclick="tomarFoto()">Capturar</button>
+                <button class="btn btn-cancel" onclick="cerrarCamara()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalDatos" class="modal"><div class="modal-content">
+        <h3 style="font-size: 1rem; color: var(--accent);">Info Pallet</h3>
+        <div class="form-group"><label>SKU</label><input type="text" id="sku"></div>
+        <div class="form-group"><label>Descripción</label><input type="text" id="descripcion"></div>
+        <div class="form-group"><label>Cantidad</label><input type="number" id="cantidad"></div>
+        <div class="form-group"><label>Tonalidad</label><input type="text" id="tonalidad"></div>
+        <div class="form-group"><label>Observación</label><input type="text" id="observacion"></div>
+        <div class="modal-actions"><button class="btn btn-save" onclick="guardarDatos()">Guardar</button><button class="btn btn-cancel" onclick="cerrarModal('modalDatos')">Cancelar</button></div>
+    </div></div>
+
+    <div id="modalObjeto" class="modal"><div class="modal-content">
+        <h3 id="modalObjTitle" style="font-size: 1rem; color: var(--objeto);">Registrar Objeto</h3>
+        <div class="form-group"><label>Descripción</label><input type="text" id="objDesc"></div>
+        <div class="form-group"><label>Cantidad</label><input type="number" id="objCant"></div>
+        <div class="modal-actions"><button class="btn btn-save" style="background:var(--objeto)" onclick="guardarObjeto()">Guardar</button><button class="btn btn-cancel" onclick="cerrarModal('modalObjeto')">Cancelar</button></div>
+    </div></div>
+
+    <script>
+        // --- LOGICA DE NAVEGACION ---
+        function mostrarSeccion(id) {
+            document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        // --- LOGICA LPN SIN CONSUMIR (CAMARA) ---
+        let stream = null;
+        let listaLPN = [];
+
+        async function abrirCamara() {
+            document.getElementById('modalCamara').style.display = 'flex';
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('video').srcObject = stream;
+        }
+
+        function cerrarCamara() {
+            if(stream) stream.getTracks().forEach(t => t.stop());
+            document.getElementById('modalCamara').style.display = 'none';
+        }
+
+        function tomarFoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            const data = {
+                foto: canvas.toDataURL('image/jpeg'),
+                obs: document.getElementById('lpn-obs').value,
+                fecha: new Date().toLocaleString()
+            };
+            listaLPN.push(data);
+            renderLPNList();
+            document.getElementById('lpn-obs').value = "";
+            cerrarCamara();
+        }
+
+        function renderLPNList() {
+            const container = document.getElementById('lpn-lista');
+            container.innerHTML = listaLPN.map(item => `
+                <div class="lpn-card">
+                    <img src="${item.foto}">
+                    <div class="lpn-card-info">
+                        <p class="date">${item.fecha}</p>
+                        <p><strong>Obs:</strong> ${item.obs}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- LOGICA MAPA (TAL CUAL ESTABA) ---
+        const patio = document.getElementById('patio');
+        let abiertoId = null;
+        let draggedItem = null; 
+        let editandoContexto = { pIndex: null, nIndex: null };
+
+        let posiciones = Array.from({length: 8}, (_, i) => ({
+            id: `S-${i+1}`, tipo: 'pallet', 
+            filasObjeto: Array.from({length: 5}, () => ({ desc: "", cant: "" })),
+            filas: Array.from({length: 5}, () => ({ sku: "", desc: "", cant: "", tono: "", obs: "" }))
+        }));
+
+        function agregarPosicion() {
+            const maxId = posiciones.length > 0 ? Math.max(...posiciones.map(p => parseInt(p.id.split('-')[1]))) : 0;
+            posiciones.push({ 
+                id: `S-${maxId + 1}`, tipo: 'pallet',
+                filasObjeto: Array.from({length: 5}, () => ({ desc: "", cant: "" })),
+                filas: Array.from({length: 5}, () => ({ sku: "", desc: "", cant: "", tono: "", obs: "" })) 
+            });
+            renderPatio();
+        }
+
+        function abrirModal(pIndex, nIndex) {
+            editandoContexto = { pIndex, nIndex };
+            const d = posiciones[pIndex].filas[nIndex];
+            document.getElementById('sku').value = d.sku;
+            document.getElementById('descripcion').value = d.desc;
+            document.getElementById('cantidad').value = d.cant;
+            document.getElementById('tonalidad').value = d.tono || "";
+            document.getElementById('observacion').value = d.obs;
+            document.getElementById('modalDatos').style.display = 'flex';
+        }
+
+        function abrirModalObjeto(pIndex, nIndex) {
+            editandoContexto = { pIndex, nIndex };
+            const d = posiciones[pIndex].filasObjeto[nIndex];
+            document.getElementById('objDesc').value = d.desc;
+            document.getElementById('objCant').value = d.cant;
+            document.getElementById('modalObjeto').style.display = 'flex';
+        }
+
+        function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function guardarDatos() {
+            const { pIndex, nIndex } = editandoContexto;
+            posiciones[pIndex].filas[nIndex] = {
+                sku: document.getElementById('sku').value, desc: document.getElementById('descripcion').value,
+                cant: document.getElementById('cantidad').value, tono: document.getElementById('tonalidad').value,
+                obs: document.getElementById('observacion').value
+            };
+            cerrarModal('modalDatos'); renderPatio();
+        }
+
+        function guardarObjeto() {
+            const { pIndex, nIndex } = editandoContexto;
+            posiciones[pIndex].tipo = 'objeto';
+            posiciones[pIndex].filasObjeto[nIndex] = { desc: document.getElementById('objDesc').value, cant: document.getElementById('objCant').value };
+            cerrarModal('modalObjeto'); renderPatio();
+        }
+
+        function renderPatio() {
+            patio.innerHTML = '';
+            const basura = document.createElement('div');
+            basura.className = 'obstaculo';
+            basura.innerHTML = `<span>CONTENEDOR DE BASURA</span>`;
+            patio.appendChild(basura);
+
+            posiciones.forEach((pos, pIndex) => {
+                const div = document.createElement('div');
+                div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''}`;
+                div.draggable = true;
+                
+                if (pIndex < 8) { div.style.gridColumn = pIndex + 1; div.style.gridRow = 1; }
+                else if (pIndex < 14) { div.style.gridColumn = 9 + (pIndex - 8); div.style.gridRow = 5; }
+                else if (pIndex < 46) {
+                    let sub = pIndex - 14; div.style.gridColumn = (sub % 8) + 1; div.style.gridRow = Math.floor(sub / 8) + 2;
+                } else {
+                    let ext = pIndex - 46; div.style.gridColumn = (ext % 15) + 1; div.style.gridRow = Math.floor(ext / 15) + 6;
+                }
+
+                if (abiertoId === pos.id) div.classList.add('abierto');
+
+                div.addEventListener('dragstart', (e) => { if(e.target === div) draggedItem = { type: 'pos', index: pIndex }; });
+                div.addEventListener('dragover', (e) => e.preventDefault());
+                div.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if(draggedItem && draggedItem.type === 'pos') {
+                        const temp = posiciones[draggedItem.index];
+                        posiciones[draggedItem.index] = posiciones[pIndex];
+                        posiciones[pIndex] = temp;
+                        renderPatio();
+                    }
+                });
+
+                const btnX = document.createElement('div');
+                btnX.className = 'btn-cerrar'; btnX.innerText = '✕';
+                btnX.onclick = (e) => { e.stopPropagation(); posiciones.splice(pIndex, 1); renderPatio(); };
+
+                div.innerHTML = `<span class="id-piso">${pos.id}</span>
+                                 <span class="nivel-badge">${pos.filas.filter(f => f.sku.trim() !== "").length}</span>
+                                 <span class="icon-objeto">⚙️</span>`;
+                div.appendChild(btnX);
+                div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
+
+                let detalle = document.createElement('div');
+                detalle.className = 'detalle-pila';
+                detalle.onclick = (e) => e.stopPropagation();
+
+                for (let n = 0; n < 5; n++) {
+                    const b = document.createElement('button');
+                    b.className = `fila-btn ${pos.tipo === 'pallet' ? (pos.filas[n].sku ? 'con-datos' : '') : 'objeto-datos'}`;
+                    b.innerText = pos.tipo === 'pallet' ? (pos.filas[n].sku ? `F${n+1}: ${pos.filas[n].sku}` : `Fila ${n+1}`) : (pos.filasObjeto[n].desc ? `N${n+1}: ${pos.filasObjeto[n].desc}` : `Nivel ${n+1}`);
+                    b.onclick = () => pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
+                    detalle.appendChild(b);
+                }
+
+                const btnObj = document.createElement('button');
+                btnObj.className = 'fila-btn btn-objeto-trigger'; btnObj.innerText = "+ Objeto";
+                btnObj.onclick = () => abrirModalObjeto(pIndex, 0);
+                detalle.appendChild(btnObj);
+
+                div.appendChild(detalle);
+                patio.appendChild(div);
+            });
+        }
+        renderPatio();
+    </script>
+</body>
+</html>
