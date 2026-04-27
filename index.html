@@ -58,6 +58,7 @@
     .view-only-hidden { display: block; }
     body.viewer-mode .view-only-hidden { display: none !important; }
     body.viewer-mode .posicion { cursor: default !important; }
+    body.viewer-mode .btn-objeto-trigger { display: none !important; }
 
     /* --- SIDEBAR --- */
     .sidebar {
@@ -139,15 +140,19 @@
     }
     .posicion {
         background: var(--card); width: 60px; height: 60px; border-radius: 8px; border: 2px solid #444;
-        display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; cursor: move;
+        display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; cursor: pointer;
     }
     .posicion.drag-over { border: 2px dashed var(--accent); background: rgba(52, 152, 219, 0.1); }
     .posicion.es-objeto { background: var(--objeto) !important; border-color: #bdc3c7; }
+
+    /* BOTÓN X REPARADO */
     .btn-cerrar {
         position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border-radius: 50%;
         width: 22px; height: 22px; font-size: 12px; display: none; justify-content: center; align-items: center; border: 2px solid #fff; z-index: 150;
     }
-    .posicion.abierto .btn-cerrar { display: flex; }
+    .posicion:hover .btn-cerrar { display: flex; }
+    body.viewer-mode .btn-cerrar { display: none !important; }
+
     .obstaculo {
         grid-column: 9; grid-row: 1 / span 4; background: var(--obstacle); border: 3px solid #222; border-radius: 4px;
         display: flex; justify-content: center; align-items: center; font-weight: bold; color: #888; font-size: 0.6rem; text-align: center;
@@ -166,7 +171,7 @@
         box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
     .fila-btn {
-        background: #444; border: 1px solid #555; color: white; padding: 5px; border-radius: 4px; font-size: 0.7rem; cursor: move;
+        background: #444; border: 1px solid #555; color: white; padding: 5px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;
         text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative;
     }
     .fila-btn.drag-over-row { border-top: 2px solid var(--accent); background: rgba(52, 152, 219, 0.2); }
@@ -194,6 +199,9 @@
     .lpn-grid-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
     .lpn-card { background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid #444; cursor: pointer; }
     .lpn-card img { width: 100%; height: 180px; object-fit: cover; }
+
+    /* LINK CREAR CUENTA */
+    .link-crear { color: var(--accent); display: block; margin-top: 15px; font-size: 0.8rem; cursor: pointer; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -204,16 +212,17 @@
     <input type="text" id="user-in" placeholder="Usuario">
     <input type="password" id="pass-in" placeholder="Contraseña">
     <button class="btn-login" onclick="iniciarSesion()">Ingresar</button>
+    <span class="link-crear" onclick="crearCuenta()">¿No tienes cuenta? Crear una ahora</span>
   </div>
 </div>
 
 <div class="sidebar">
   <div class="sidebar-header"><span>📦 PatioPro</span></div>
   <div class="sidebar-user">
-    <div class="user-avatar">R</div>
+    <div id="user-avatar-initial" class="user-avatar">R</div>
     <div>
-      <div id="current-username" style="font-weight: bold;">Recepcion</div>
-      <div id="current-role" style="font-size: 0.7rem; color: #888;">Administrador</div>
+      <div id="current-username" style="font-weight: bold;">Cargando...</div>
+      <div id="current-role" style="font-size: 0.7rem; color: #888;">Rol</div>
     </div>
   </div>
   <div class="sidebar-menu">
@@ -333,7 +342,7 @@
   let abiertoId = null;
   let draggedItemIndex = null;
   let draggedFilaIdx = null;
-  let draggedSourcePosIdx = null; // Nueva: para saber de qué S-x viene la fila
+  let draggedSourcePosIdx = null;
   let editandoContexto = { pIndex: null, nIndex: null };
 
   let posiciones = Array.from({length: 8}, (_, i) => ({
@@ -345,14 +354,39 @@
   function iniciarSesion() {
       const u = document.getElementById('user-in').value;
       const p = document.getElementById('pass-in').value;
-      if(u === "recepciontarapoto" && p === "Hpsa2028@") {
+
+      const userAdmin = "recepciontarapoto";
+      const passAdmin = "Hpsa2028@";
+      const userVisor = "visor";
+      const passVisor = "visor123";
+
+      if(u === userAdmin && p === passAdmin) {
           modoAdmin = true;
+          document.body.classList.remove('viewer-mode');
+          document.getElementById('current-username').innerText = "Recepcion";
+          document.getElementById('current-role').innerText = "Administrador";
+          document.getElementById('user-avatar-initial').innerText = "R";
           document.getElementById('login-overlay').style.display = 'none';
           renderPatio();
       }
+      else if (u === userVisor && p === passVisor) {
+          modoAdmin = false;
+          document.body.classList.add('viewer-mode');
+          document.getElementById('current-username').innerText = "Visor General";
+          document.getElementById('current-role').innerText = "Modo Solo Lectura";
+          document.getElementById('user-avatar-initial').innerText = "V";
+          document.getElementById('login-overlay').style.display = 'none';
+          renderPatio();
+      }
+      else {
+          alert("Usuario o Contraseña incorrectos");
+      }
   }
 
-  // --- LPN CÁMARA ---
+  function crearCuenta() {
+      alert("Para crear un usuario de visualización, use:\nUsuario: visor\nContraseña: visor123");
+  }
+
   async function abrirCamara() {
       document.getElementById('modalCamara').style.display = 'flex';
       try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); document.getElementById('video').srcObject = stream; }
@@ -372,10 +406,10 @@
       `).join('');
   }
 
-  // --- MAPA Y LÓGICA DE POSICIONAMIENTO ---
   function renderPatio() {
       const pCont = document.getElementById('patio');
       pCont.innerHTML = '';
+
       const basura = document.createElement('div');
       basura.className = 'obstaculo'; basura.innerHTML = `<span>CONTENEDOR DE BASURA</span>`;
       pCont.appendChild(basura);
@@ -395,10 +429,8 @@
           if(modoAdmin) {
               div.draggable = true;
               div.ondragstart = (e) => {
-                  if (e.target.classList.contains('posicion')) {
-                    draggedItemIndex = pIndex;
-                    e.dataTransfer.setData("type", "posicion");
-                  }
+                  draggedItemIndex = pIndex;
+                  e.dataTransfer.setData("type", "posicion");
               };
               div.ondragover = (e) => {
                   e.preventDefault();
@@ -408,41 +440,30 @@
               div.ondrop = (e) => {
                   e.preventDefault();
                   div.classList.remove('drag-over');
-
                   const type = e.dataTransfer.getData("type");
 
-                  // CASO 1: MOVER UNA FILA A UN NUEVO ESPACIO (Lo que pediste)
                   if (type === "fila") {
                       const fromPos = draggedSourcePosIdx;
                       const fromFila = draggedFilaIdx;
-
-                      // Obtenemos los datos de origen (detectando si es pallet u objeto)
                       const sourceData = posiciones[fromPos].tipo === 'pallet' ?
                                        {...posiciones[fromPos].filas[fromFila]} :
                                        {...posiciones[fromPos].filasObjeto[fromFila]};
 
-                      // Buscamos la primera fila vacía en el destino (div actual)
                       let targetArray = pos.tipo === 'pallet' ? pos.filas : pos.filasObjeto;
                       let emptyIdx = targetArray.findIndex(f => (pos.tipo === 'pallet' ? !f.sku : !f.tipo));
 
                       if (emptyIdx !== -1) {
-                          // Copiamos datos al destino
                           if (pos.tipo === 'pallet') pos.filas[emptyIdx] = sourceData;
                           else pos.filasObjeto[emptyIdx] = sourceData;
 
-                          // Limpiamos el origen
                           if (posiciones[fromPos].tipo === 'pallet') {
                               posiciones[fromPos].filas[fromFila] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" };
                           } else {
                               posiciones[fromPos].filasObjeto[fromFila] = { tipo: "", cant: 0 };
                           }
                           renderPatio();
-                      } else {
-                          alert("No hay filas libres en este espacio");
                       }
-                  }
-                  // CASO 2: MOVER EL ESPACIO COMPLETO (S-1 por S-4)
-                  else if (draggedItemIndex !== null && draggedItemIndex !== pIndex) {
+                  } else if (draggedItemIndex !== null && draggedItemIndex !== pIndex) {
                       const temp = posiciones[draggedItemIndex];
                       posiciones[draggedItemIndex] = posiciones[pIndex];
                       posiciones[pIndex] = temp;
@@ -450,14 +471,37 @@
                       renderPatio();
                   }
               };
-              const btnX = document.createElement('div'); btnX.className = 'btn-cerrar'; btnX.innerText = '✕';
-              btnX.onclick = (e) => { e.stopPropagation(); posiciones.splice(pIndex, 1); renderPatio(); };
+
+              // BOTÓN X CORREGIDO
+              const btnX = document.createElement('div');
+              btnX.className = 'btn-cerrar';
+              btnX.innerHTML = '✕';
+              btnX.onclick = (e) => {
+                  e.stopPropagation(); // Evita abrir el detalle al borrar
+                  if(confirm("¿Eliminar este espacio definitivamente?")) {
+                      posiciones.splice(pIndex, 1);
+                      abiertoId = null; // Cierra cualquier detalle abierto
+                      renderPatio();
+                  }
+              };
               div.appendChild(btnX);
           }
 
-          div.innerHTML += `<span class="id-piso">${pos.id}</span><span class="nivel-badge">${pos.tipo === 'pallet' ? pos.filas.filter(f => f.sku).length : ''}</span><span class="icon-objeto">⚙️</span>`;
+          // Agregamos el contenido de texto en un contenedor aparte para no borrar la X al asignar innerHTML
+          const infoSpan = document.createElement('div');
+          infoSpan.style.pointerEvents = 'none';
+          infoSpan.innerHTML = `<span class="id-piso">${pos.id}</span>
+                           <span class="nivel-badge">${pos.tipo === 'pallet' ? pos.filas.filter(f => f.sku).length : ''}</span>
+                           <span class="icon-objeto">⚙️</span>`;
+          div.appendChild(infoSpan);
 
-          div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
+          div.onclick = (e) => {
+              // Si el clic viene de la X, no abrir el detalle
+              if (e.target.classList.contains('btn-cerrar')) return;
+              abiertoId = (abiertoId === pos.id) ? null : pos.id;
+              renderPatio();
+          };
+
           if (abiertoId === pos.id) div.classList.add('abierto');
 
           let detalle = document.createElement('div');
@@ -474,38 +518,33 @@
               const data = pos.tipo === 'pallet' ? pos.filas[n] : pos.filasObjeto[n];
               b.className = `fila-btn ${pos.tipo === 'pallet' ? (data.sku ? 'con-datos' : '') : (data.tipo ? 'objeto-datos' : '')}`;
               b.innerText = pos.tipo === 'pallet' ? (data.sku ? `F${n+1}: ${data.sku}` : `Fila ${n+1}`) : (data.tipo ? `N${n+1}: ${data.tipo}` : `Nivel ${n+1}`);
-              b.onclick = () => pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
 
               if(modoAdmin) {
-                b.draggable = true;
-                b.ondragstart = (e) => {
-                    e.stopPropagation();
-                    draggedFilaIdx = n;
-                    draggedSourcePosIdx = pIndex;
-                    e.dataTransfer.setData("type", "fila");
-                };
-                b.ondragover = (e) => {
-                    e.preventDefault();
-                    b.classList.add('drag-over-row');
-                };
-                b.ondragleave = () => b.classList.remove('drag-over-row');
-                b.ondrop = (e) => {
-                    e.stopPropagation();
-                    b.classList.remove('drag-over-row');
-                    const type = e.dataTransfer.getData("type");
-
-                    if (type === "fila" && draggedSourcePosIdx === pIndex) {
-                        const arrayActual = pos.tipo === 'pallet' ? pos.filas : pos.filasObjeto;
-                        if (draggedFilaIdx !== null && draggedFilaIdx !== n) {
-                            const temp = arrayActual[draggedFilaIdx];
-                            arrayActual[draggedFilaIdx] = arrayActual[n];
-                            arrayActual[n] = temp;
-                            renderPatio();
-                        }
-                    }
-                };
+                  b.onclick = () => pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
+                  b.draggable = true;
+                  b.ondragstart = (e) => {
+                      e.stopPropagation();
+                      draggedFilaIdx = n;
+                      draggedSourcePosIdx = pIndex;
+                      e.dataTransfer.setData("type", "fila");
+                  };
+                  b.ondragover = (e) => { e.preventDefault(); b.classList.add('drag-over-row'); };
+                  b.ondragleave = () => b.classList.remove('drag-over-row');
+                  b.ondrop = (e) => {
+                      e.stopPropagation();
+                      b.classList.remove('drag-over-row');
+                      const type = e.dataTransfer.getData("type");
+                      if (type === "fila" && draggedSourcePosIdx === pIndex) {
+                          const arrayActual = pos.tipo === 'pallet' ? pos.filas : pos.filasObjeto;
+                          if (draggedFilaIdx !== null && draggedFilaIdx !== n) {
+                              const temp = arrayActual[draggedFilaIdx];
+                              arrayActual[draggedFilaIdx] = arrayActual[n];
+                              arrayActual[n] = temp;
+                              renderPatio();
+                          }
+                      }
+                  };
               }
-
               detalle.appendChild(b);
           }
           div.appendChild(detalle);
@@ -514,17 +553,22 @@
       actualizarTablas();
   }
 
-  // --- MODALES Y GUARDADO ---
   function abrirModal(p, n) {
       editandoContexto = { pIndex: p, nIndex: n };
       const d = posiciones[p].filas[n];
       document.getElementById('sku').value = d.sku;
       document.getElementById('lpn_num').value = d.lpn;
       document.getElementById('cantidad').value = d.cant;
+      document.getElementById('descripcion').value = d.desc;
+      document.getElementById('tonalidad').value = d.tono;
+      document.getElementById('observacion').value = d.obs;
       document.getElementById('modalDatos').style.display = 'flex';
   }
   function abrirModalObjeto(p, n) {
       editandoContexto = { pIndex: p, nIndex: n };
+      const d = posiciones[p].filasObjeto[n];
+      document.getElementById('objTipo').value = d.tipo;
+      document.getElementById('objCant').value = d.cant;
       document.getElementById('modalObjeto').style.display = 'flex';
   }
   function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
