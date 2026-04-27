@@ -52,7 +52,7 @@
         background: #111; border: 1px solid #444; color: white;
         border-radius: 6px; box-sizing: border-box;
     }
-    .btn-login { background: var(--accent); width: 100%; margin-top: 15px; }
+    .btn-login { background: var(--accent); width: 100%; margin-top: 15px; border:none; padding:12px; color:white; font-weight:bold; cursor:pointer; border-radius:6px; }
     .link-toggle { font-size: 0.8rem; color: #888; cursor: pointer; margin-top: 15px; display: block; text-decoration: underline; }
 
     /* Clases de Control de Vista */
@@ -119,27 +119,49 @@
     .btn { padding: 12px 24px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; }
     .btn-add { background-color: var(--success); }
 
-    /* --- ESTILOS LPN SIN CONSUMIR --- */
-    .lpn-container { max-width: 1000px; margin: 0 auto; }
-    .lpn-grid-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 20px;
+    /* --- ESTILOS TABLAS (OBJETOS Y ACTIVOS) --- */
+    .tabla-container {
+        width: 100%;
+        max-width: 1100px;
         margin-top: 20px;
-    }
-    .lpn-card {
         background: var(--card);
-        border-radius: 10px;
-        overflow: hidden;
+        padding: 20px;
+        border-radius: 12px;
         border: 1px solid #444;
-        transition: transform 0.2s;
-        cursor: pointer;
     }
-    .lpn-card:hover { transform: translateY(-5px); border-color: var(--accent); }
-    .lpn-card img { width: 100%; height: 180px; object-fit: cover; border-bottom: 1px solid #444; }
-    .lpn-card-info { padding: 12px; }
-    .lpn-card-info p { margin: 5px 0; font-size: 0.85rem; color: #ccc; }
-    .lpn-card-info .date { font-size: 0.7rem; color: #888; }
+    .grid-tablas {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 20px;
+    }
+    .col-resumen {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+    .tabla-estilizada {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        color: #eee;
+    }
+    .tabla-estilizada th {
+        background: #111;
+        color: var(--accent);
+        text-align: left;
+        padding: 10px;
+        border-bottom: 2px solid #444;
+    }
+    .tabla-estilizada td {
+        padding: 10px;
+        border-bottom: 1px solid #333;
+    }
+    .scroll-tabla {
+        max-height: 600px;
+        overflow-y: auto;
+        border: 1px solid #333;
+        border-radius: 4px;
+    }
 
     /* --- ESTILOS MAPA --- */
     .patio-grid {
@@ -187,7 +209,6 @@
     .fila-btn.objeto-datos { border-left: 4px solid #333; background: #666; }
     .btn-objeto-trigger { background: #2980b9; color: white; font-weight: bold; margin-top: 5px; border: 1px solid #fff; cursor: pointer; }
 
-    /* MEJORA DRAG VISUAL */
     .fila-btn.dragging { opacity: 0.5; background: var(--sidebar-active); border: 1px dashed #fff; }
     .fila-btn.drag-over-fila { border-top: 2px solid var(--accent); }
 
@@ -206,6 +227,21 @@
     .btn-save { background: var(--accent); flex: 1; }
     .btn-cancel { background: #555; flex: 1; }
 
+    .lpn-container { max-width: 1000px; margin: 0 auto; }
+    .lpn-grid-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .lpn-card {
+        background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid #444; transition: transform 0.2s; cursor: pointer;
+    }
+    .lpn-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+    .lpn-card img { width: 100%; height: 180px; object-fit: cover; border-bottom: 1px solid #444; }
+    .lpn-card-info { padding: 12px; }
+    .lpn-card-info p { margin: 5px 0; font-size: 0.85rem; color: #ccc; }
+    .lpn-card-info .date { font-size: 0.7rem; color: #888; }
     .preview-img-container { width: 100%; max-height: 70vh; overflow: hidden; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444; }
     .preview-img-container img { width: 100%; height: auto; display: block; }
   </style>
@@ -217,14 +253,14 @@
     <h2>Acceso PatioPro</h2>
     <input type="text" id="user-in" placeholder="Usuario">
     <input type="password" id="pass-in" placeholder="Contraseña">
-    <button class="btn btn-login" onclick="iniciarSesion()">Ingresar</button>
+    <button class="btn-login" onclick="iniciarSesion()">Ingresar</button>
     <span class="link-toggle" onclick="toggleAuth(true)">¿No tienes cuenta? Crear usuario</span>
   </div>
   <div class="login-box" id="box-registro" style="display: none;">
     <h2>Crear Usuario</h2>
     <input type="text" id="reg-user" placeholder="Nuevo Usuario">
     <input type="password" id="reg-pass" placeholder="Contraseña">
-    <button class="btn btn-login" style="background: var(--success);" onclick="registrarUsuario()">Registrar y Entrar</button>
+    <button class="btn-login" style="background: var(--success);" onclick="registrarUsuario()">Registrar y Entrar</button>
     <span class="link-toggle" onclick="toggleAuth(false)">Volver al Login</span>
   </div>
 </div>
@@ -245,7 +281,9 @@
     <div class="menu-item" onclick="mostrarSeccion('lpn-seccion')">
       <span class="menu-icon">📑</span><span>LPN sin consumir</span>
     </div>
-    <div class="menu-item"><span class="menu-icon">⚙️</span><span>Objetos y Activos</span></div>
+    <div class="menu-item" onclick="mostrarSeccion('activos-seccion')">
+      <span class="menu-icon">⚙️</span><span>Objetos y Activos</span>
+    </div>
     <div class="menu-item"><span class="menu-icon">📊</span><span>Estadísticas</span></div>
     <div class="menu-item" style="margin-top: 20px; color: var(--danger);" onclick="cerrarSesion()"><span class="menu-icon">🚪</span><span>Cerrar Sesión</span></div>
   </div>
@@ -267,6 +305,64 @@
         <button class="btn btn-add" onclick="abrirCamara()">+ Agregar Foto y Obs</button>
       </div>
       <div class="lpn-grid-list" id="lpn-lista"></div>
+    </div>
+  </div>
+
+  <div id="activos-seccion" class="section-panel">
+    <h2 style="text-align: center;">Inventario de Objetos y Activos</h2>
+    <div class="tabla-container">
+      <div class="grid-tablas">
+        <div class="col-resumen">
+          <div>
+            <h3 style="font-size: 1rem; color: var(--accent);">Resumen General</h3>
+            <table class="tabla-estilizada">
+              <thead>
+              <tr><th>Concepto</th><th>Total</th></tr>
+              </thead>
+              <tbody id="cuerpo-resumen"></tbody>
+            </table>
+          </div>
+
+          <div>
+            <h3 style="font-size: 1rem; color: var(--success);">Consolidado de SKUs</h3>
+            <div class="scroll-tabla" style="max-height: 200px;">
+              <table class="tabla-estilizada">
+                <thead>
+                <tr><th>SKU</th><th>Unidades Totales</th></tr>
+                </thead>
+                <tbody id="cuerpo-conteo-sku"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h3 style="font-size: 1rem; color: var(--pallet);">Pallets / Contenedores</h3>
+            <table class="tabla-estilizada">
+              <thead>
+              <tr><th>Tipo</th><th>Cantidad</th></tr>
+              </thead>
+              <tbody id="cuerpo-conteo-objetos"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-size: 1rem; color: var(--accent);">Detalle de Ubicaciones</h3>
+          <div class="scroll-tabla">
+            <table class="tabla-estilizada">
+              <thead style="position: sticky; top: 0; z-index: 10;">
+              <tr>
+                <th>Ubicación</th>
+                <th>SKU / Objeto</th>
+                <th>Cant.</th>
+                <th>Info Adicional</th>
+              </tr>
+              </thead>
+              <tbody id="cuerpo-detalle-activos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -309,6 +405,7 @@
 
 <div id="modalDatos" class="modal"><div class="modal-content">
   <h3 style="font-size: 1rem; color: var(--accent);">Info Pallet</h3>
+  <div class="form-group"><label>Nro LPN</label><input type="text" id="lpn_num"></div>
   <div class="form-group"><label>SKU</label><input type="text" id="sku"></div>
   <div class="form-group"><label>Descripción</label><input type="text" id="descripcion"></div>
   <div class="form-group"><label>Cantidad</label><input type="number" id="cantidad"></div>
@@ -376,12 +473,13 @@
 
   function cerrarSesion() { location.reload(); }
 
-  // --- LOGICA DE NAVEGACION ---
+  // --- NAVEGACION ---
   function mostrarSeccion(id) {
       document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
       document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-      event.currentTarget.classList.add('active');
+      const activeMenu = Array.from(document.querySelectorAll('.menu-item')).find(m => m.innerText.includes(id === 'mapa-seccion' ? 'Mapa' : id === 'lpn-seccion' ? 'LPN' : 'Objetos'));
+      if(activeMenu) activeMenu.classList.add('active');
   }
 
   // --- LOGICA LPN ---
@@ -452,7 +550,7 @@
   let posiciones = Array.from({length: 8}, (_, i) => ({
       id: `S-${i+1}`, tipo: 'pallet',
       filasObjeto: Array.from({length: 5}, () => ({ desc: "", cant: "" })),
-      filas: Array.from({length: 5}, () => ({ sku: "", desc: "", cant: "", tono: "", obs: "" }))
+      filas: Array.from({length: 5}, () => ({ lpn: "", sku: "", desc: "", cant: "", tono: "", obs: "" }))
   }));
 
   function agregarPosicion() {
@@ -460,7 +558,7 @@
       posiciones.push({
           id: `S-${maxId + 1}`, tipo: 'pallet',
           filasObjeto: Array.from({length: 5}, () => ({ desc: "", cant: "" })),
-          filas: Array.from({length: 5}, () => ({ sku: "", desc: "", cant: "", tono: "", obs: "" }))
+          filas: Array.from({length: 5}, () => ({ lpn: "", sku: "", desc: "", cant: "", tono: "", obs: "" }))
       });
       renderPatio();
   }
@@ -469,6 +567,7 @@
       if(!modoAdmin) return;
       editandoContexto = { pIndex, nIndex };
       const d = posiciones[pIndex].filas[nIndex];
+      document.getElementById('lpn_num').value = d.lpn || "";
       document.getElementById('sku').value = d.sku;
       document.getElementById('descripcion').value = d.desc;
       document.getElementById('cantidad').value = d.cant;
@@ -491,6 +590,7 @@
   function guardarDatos() {
       const { pIndex, nIndex } = editandoContexto;
       posiciones[pIndex].filas[nIndex] = {
+          lpn: document.getElementById('lpn_num').value,
           sku: document.getElementById('sku').value, desc: document.getElementById('descripcion').value,
           cant: document.getElementById('cantidad').value, tono: document.getElementById('tonalidad').value,
           obs: document.getElementById('observacion').value
@@ -503,6 +603,92 @@
       posiciones[pIndex].tipo = 'objeto';
       posiciones[pIndex].filasObjeto[nIndex] = { desc: document.getElementById('objDesc').value, cant: document.getElementById('objCant').value };
       cerrarModal('modalObjeto'); renderPatio();
+  }
+
+  // ACTUALIZACIÓN DE TABLAS DE ACTIVOS CON CONTEOS PERSONALIZADOS
+  function actualizarTablasActivos() {
+      const cuerpoResumen = document.getElementById('cuerpo-resumen');
+      const cuerpoDetalle = document.getElementById('cuerpo-detalle-activos');
+      const cuerpoConteoSku = document.getElementById('cuerpo-conteo-sku');
+      const cuerpoConteoObjetos = document.getElementById('cuerpo-conteo-objetos');
+
+      let skuUnicos = new Set();
+      let totalItems = 0;
+      let totalCantidad = 0;
+      let htmlDetalle = "";
+
+      // Diccionarios para conteos
+      let mapaSKU = {}; // { 'sku123': totalCant }
+      let mapaObjetos = {
+        'euro pallet': 0,
+        'mueble pallet': 0,
+        'cajas sensibles': 0,
+        'rejillas': 0,
+        'otros': 0
+      };
+
+      posiciones.forEach(pos => {
+          if(pos.tipo === 'pallet') {
+              pos.filas.forEach((f, idx) => {
+                  if(f.sku.trim() !== "") {
+                      let skuLimpio = f.sku.trim().toUpperCase();
+                      let cant = parseInt(f.cant || 0);
+
+                      skuUnicos.add(skuLimpio);
+                      totalItems++;
+                      totalCantidad += cant;
+
+                      // Conteo SKU repetidos
+                      mapaSKU[skuLimpio] = (mapaSKU[skuLimpio] || 0) + cant;
+
+                      htmlDetalle += `<tr><td>${pos.id} (F${idx+1})</td><td>${f.sku} ${f.lpn ? '| LPN:'+f.lpn : ''}</td><td>${f.cant}</td><td><small>${f.tono || 'Sin tono'}</small></td></tr>`;
+                  }
+              });
+          } else {
+              pos.filasObjeto.forEach((o, idx) => {
+                  if(o.desc.trim() !== "") {
+                      let descLimpia = o.desc.trim().toLowerCase();
+                      let cant = parseInt(o.cant || 0);
+                      totalItems++;
+                      totalCantidad += cant;
+
+                      // Clasificación de pallets/objetos solicitada
+                      if(descLimpia.includes('euro')) mapaObjetos['euro pallet'] += cant;
+                      else if(descLimpia.includes('mueble')) mapaObjetos['mueble pallet'] += cant;
+                      else if(descLimpia.includes('sensible')) mapaObjetos['cajas sensibles'] += cant;
+                      else if(descLimpia.includes('rejilla')) mapaObjetos['rejillas'] += cant;
+                      else mapaObjetos['otros'] += cant;
+
+                      htmlDetalle += `<tr><td>${pos.id} (N${idx+1})</td><td>⚙️ ${o.desc}</td><td>${o.cant}</td><td>Objeto de Patio</td></tr>`;
+                  }
+              });
+          }
+      });
+
+      // Render Resumen
+      cuerpoResumen.innerHTML = `
+          <tr><td>SKUs Diferentes</td><td><strong>${skuUnicos.size}</strong></td></tr>
+          <tr><td>LPNs / Niveles Ocupados</td><td><strong>${totalItems}</strong></td></tr>
+          <tr><td>Suma Cantidades</td><td><strong>${totalCantidad}</strong></td></tr>
+      `;
+
+      // Render Conteo SKU (solo si hay repetidos o para ver totales)
+      let htmlSKU = "";
+      for (const [sku, cant] of Object.entries(mapaSKU)) {
+          htmlSKU += `<tr><td>${sku}</td><td><strong>${cant}</strong></td></tr>`;
+      }
+      cuerpoConteoSku.innerHTML = htmlSKU || '<tr><td colspan="2">Sin datos</td></tr>';
+
+      // Render Conteo Objetos/Pallets
+      cuerpoConteoObjetos.innerHTML = `
+        <tr><td>Euro Pallet</td><td><strong>${mapaObjetos['euro pallet']}</strong></td></tr>
+        <tr><td>Mueble Pallet</td><td><strong>${mapaObjetos['mueble pallet']}</strong></td></tr>
+        <tr><td>Cajas Sensibles</td><td><strong>${mapaObjetos['cajas sensibles']}</strong></td></tr>
+        <tr><td>Rejillas</td><td><strong>${mapaObjetos['rejillas']}</strong></td></tr>
+        <tr><td>Otros Objetos</td><td><strong>${mapaObjetos['otros']}</strong></td></tr>
+      `;
+
+      cuerpoDetalle.innerHTML = htmlDetalle || '<tr><td colspan="4" style="text-align:center">No hay activos registrados</td></tr>';
   }
 
   function renderPatio() {
@@ -518,56 +704,35 @@
 
           if(modoAdmin) {
               div.draggable = true;
-              div.ondragstart = (e) => {
-                  if (e.target.classList.contains('posicion')) {
-                      draggedItemIndex = pIndex;
-                  }
-              };
-              div.ondragover = (e) => {
-                  e.preventDefault();
-                  if (draggedItemIndex !== null || draggedFilaIndex !== null) {
-                      div.classList.add('drag-over');
-                  }
-              };
+              div.ondragstart = (e) => { if (e.target.classList.contains('posicion')) draggedItemIndex = pIndex; };
+              div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
               div.ondragleave = () => div.classList.remove('drag-over');
-
               div.ondrop = (e) => {
-                  e.preventDefault();
-                  div.classList.remove('drag-over');
-
-                  // CASO 1: Mover recuadro completo
+                  e.preventDefault(); div.classList.remove('drag-over');
                   if (draggedItemIndex !== null && draggedItemIndex !== pIndex) {
                       const temp = posiciones[draggedItemIndex];
                       posiciones[draggedItemIndex] = posiciones[pIndex];
                       posiciones[pIndex] = temp;
                       draggedItemIndex = null;
                       renderPatio();
-                  }
-                  // CASO 2: Mover FILA a otro recuadro diferente
-                  else if (draggedFilaIndex !== null && draggedFilaOriginPosIndex !== pIndex) {
+                  } else if (draggedFilaIndex !== null && draggedFilaOriginPosIndex !== pIndex) {
                       const originPos = posiciones[draggedFilaOriginPosIndex];
                       const targetPos = posiciones[pIndex];
-
                       if (originPos.tipo === targetPos.tipo) {
                           if (originPos.tipo === 'pallet') {
-                              const dataToMove = {...originPos.filas[draggedFilaIndex]};
-                              originPos.filas[draggedFilaIndex] = { sku: "", desc: "", cant: "", tono: "", obs: "" };
-                              let filaDestino = targetPos.filas.findIndex(f => f.sku === "");
-                              if (filaDestino === -1) filaDestino = 0;
-                              targetPos.filas[filaDestino] = dataToMove;
+                              const data = {...originPos.filas[draggedFilaIndex]};
+                              originPos.filas[draggedFilaIndex] = { lpn: "", sku: "", desc: "", cant: "", tono: "", obs: "" };
+                              let dest = targetPos.filas.findIndex(f => f.sku === "");
+                              targetPos.filas[dest === -1 ? 0 : dest] = data;
                           } else {
-                              const dataToMove = {...originPos.filasObjeto[draggedFilaIndex]};
+                              const data = {...originPos.filasObjeto[draggedFilaIndex]};
                               originPos.filasObjeto[draggedFilaIndex] = { desc: "", cant: "" };
-                              let filaDestino = targetPos.filasObjeto.findIndex(f => f.desc === "");
-                              if (filaDestino === -1) filaDestino = 0;
-                              targetPos.filasObjeto[filaDestino] = dataToMove;
+                              let dest = targetPos.filasObjeto.findIndex(f => f.desc === "");
+                              targetPos.filasObjeto[dest === -1 ? 0 : dest] = data;
                           }
                           renderPatio();
-                      } else {
-                          alert("No puedes mover datos entre tipos diferentes (Pallet/Objeto)");
                       }
                       draggedFilaIndex = null;
-                      draggedFilaOriginPosIndex = null;
                   }
               };
           }
@@ -590,8 +755,8 @@
           }
 
           div.innerHTML += `<span class="id-piso">${pos.id}</span>
-                           <span class="nivel-badge">${pos.filas.filter(f => f.sku.trim() !== "").length}</span>
-                           <span class="icon-objeto">⚙️</span>`;
+                             <span class="nivel-badge">${pos.tipo === 'pallet' ? pos.filas.filter(f => f.sku.trim() !== "").length : ''}</span>
+                             <span class="icon-objeto">⚙️</span>`;
 
           div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
 
@@ -601,80 +766,43 @@
 
           for (let n = 0; n < 5; n++) {
               const b = document.createElement('button');
-              const conDatos = pos.tipo === 'pallet' ? pos.filas[n].sku : pos.filasObjeto[n].desc;
               b.className = `fila-btn ${pos.tipo === 'pallet' ? (pos.filas[n].sku ? 'con-datos' : '') : 'objeto-datos'}`;
-
-              if(pos.tipo === 'pallet') {
-                  b.innerText = pos.filas[n].sku ? `F${n+1}: ${pos.filas[n].sku}` : `Fila ${n+1}`;
-              } else {
-                  b.innerText = pos.filasObjeto[n].desc ? `N${n+1}: ${pos.filasObjeto[n].desc}` : `Nivel ${n+1}`;
-              }
+              b.innerText = pos.tipo === 'pallet' ? (pos.filas[n].sku ? `F${n+1}: ${pos.filas[n].sku}` : `Fila ${n+1}`) : (pos.filasObjeto[n].desc ? `N${n+1}: ${pos.filasObjeto[n].desc}` : `Nivel ${n+1}`);
 
               if(modoAdmin) {
                   b.draggable = true;
-                  b.ondragstart = (e) => {
-                      e.stopPropagation();
-                      draggedFilaIndex = n;
-                      draggedFilaOriginPosIndex = pIndex;
-                      draggedItemIndex = null;
-                      b.classList.add('dragging');
-                  };
-
-                  b.ondragover = (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      b.classList.add('drag-over-fila');
-                  };
-
+                  b.ondragstart = (e) => { e.stopPropagation(); draggedFilaIndex = n; draggedFilaOriginPosIndex = pIndex; draggedItemIndex = null; b.classList.add('dragging'); };
+                  b.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); b.classList.add('drag-over-fila'); };
                   b.ondragleave = () => b.classList.remove('drag-over-fila');
-
                   b.ondrop = (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      b.classList.remove('drag-over-fila');
-
-                      // Mover FILA dentro del MISMO recuadro (intercambiar)
+                      e.preventDefault(); e.stopPropagation();
                       if (draggedFilaIndex !== null && draggedFilaOriginPosIndex === pIndex) {
                           if (pos.tipo === 'pallet') {
-                              const temp = {...pos.filas[n]};
-                              pos.filas[n] = {...pos.filas[draggedFilaIndex]};
-                              pos.filas[draggedFilaIndex] = temp;
+                              const temp = {...pos.filas[n]}; pos.filas[n] = {...pos.filas[draggedFilaIndex]}; pos.filas[draggedFilaIndex] = temp;
                           } else {
-                              const temp = {...pos.filasObjeto[n]};
-                              pos.filasObjeto[n] = {...pos.filasObjeto[draggedFilaIndex]};
-                              pos.filasObjeto[draggedFilaIndex] = temp;
+                              const temp = {...pos.filasObjeto[n]}; pos.filasObjeto[n] = {...pos.filasObjeto[draggedFilaIndex]}; pos.filasObjeto[draggedFilaIndex] = temp;
                           }
-                          draggedFilaIndex = null;
                           renderPatio();
                       }
                   };
-
-                  b.ondragend = () => b.classList.remove('dragging');
               }
-
               b.onclick = () => {
-                  if(modoAdmin) {
-                      pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
-                  } else if(conDatos) {
-                      const d = pos.tipo === 'pallet' ? pos.filas[n] : pos.filasObjeto[n];
-                      alert(`DETALLE:\nSKU/Desc: ${d.sku || d.desc}\nCant: ${d.cant}\nObs: ${d.obs || d.tonalidad || 'Sin obs'}`);
-                  }
+                  if(modoAdmin) pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
+                  else if(pos.filas[n].sku || pos.filasObjeto[n].desc) alert("Detalle: " + (pos.filas[n].sku || pos.filasObjeto[n].desc));
               };
               detalle.appendChild(b);
           }
-
-          if(modoAdmin) {
-              const btnObj = document.createElement('button');
-              btnObj.className = 'fila-btn btn-objeto-trigger'; btnObj.innerText = "+ Objeto";
-              btnObj.onclick = () => abrirModalObjeto(pIndex, 0);
-              detalle.appendChild(btnObj);
-          }
-
           div.appendChild(detalle);
           patio.appendChild(div);
       });
+      actualizarTablasActivos();
   }
-  renderPatio();
+
+  // Inicio
+  window.onload = () => {
+      // Autologin para desarrollo (opcional)
+      // aplicarLogin("Recepcion", true);
+  }
 </script>
 </body>
 </html>
