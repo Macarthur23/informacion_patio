@@ -617,7 +617,16 @@
   }
 
   function agregarPosicion() {
-      posiciones.push({ id: `S-${posiciones.length+1}`, tipo: 'pallet', filas: Array.from({length:5},()=>({lpn:"",sku:"",desc:"",cant:0,tono:"",obs:""})), filasObjeto: Array.from({length:5},()=>({tipo:"",cant:0})) });
+      // Cálculo del ID dinámico para evitar repeticiones tras eliminaciones
+      const numerosExistentes = posiciones.map(p => parseInt(p.id.split('-')[1])).filter(n => !isNaN(n));
+      const siguienteId = numerosExistentes.length > 0 ? Math.max(...numerosExistentes) + 1 : 1;
+      
+      posiciones.push({ 
+          id: `S-${siguienteId}`, 
+          tipo: 'pallet', 
+          filas: Array.from({length:5},()=>({lpn:"",sku:"",desc:"",cant:0,tono:"",obs:""})), 
+          filasObjeto: Array.from({length:5},()=>({tipo:"",cant:0})) 
+      });
       db.ref('patio/posiciones').set(posiciones);
   }
   
