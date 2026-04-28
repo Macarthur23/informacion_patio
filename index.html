@@ -124,7 +124,7 @@
     body.viewer-mode .btn-cerrar { display: none !important; }
 
     .obstaculo {
-        grid-column: 9; grid-row: 1 / span 4; background: var(--obstacle); border: 3px solid #222; border-radius: 4px;
+        grid-column: 12; grid-row: 1 / span 4; background: var(--obstacle); border: 3px solid #222; border-radius: 4px;
         display: flex; justify-content: center; align-items: center; font-weight: bold; color: #888; font-size: 0.6rem; text-align: center;
     }
     .posicion.abierto { border-color: var(--accent); z-index: 1500; }
@@ -193,7 +193,7 @@
 
 <div class="main-content">
   <div class="search-container">
-      <input type="text" id="global-search" class="search-input" placeholder="🔍 Buscar SKU..." oninput="filtrarTodo()">
+    <input type="text" id="global-search" class="search-input" placeholder="🔍 Buscar SKU..." oninput="filtrarTodo()">
   </div>
 
   <div id="mapa-seccion" class="section-panel active">
@@ -414,10 +414,10 @@
           if(busqueda !== "" && pos.tipo === 'pallet'){ match = pos.filas.some(f => f.sku.toLowerCase().includes(busqueda)); }
           div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
 
-          if (pIndex < 8) { div.style.gridColumn = pIndex + 1; div.style.gridRow = 1; }
-          else if (pIndex < 14) { div.style.gridColumn = 9 + (pIndex - 8); div.style.gridRow = 5; }
-          else if (pIndex < 46) { let sub = pIndex - 14; div.style.gridColumn = (sub % 8) + 1; div.style.gridRow = Math.floor(sub / 8) + 2; }
-          else { let ext = pIndex - 46; div.style.gridColumn = (ext % 15) + 1; div.style.gridRow = Math.floor(ext / 15) + 6; }
+          if (pIndex < 11) { div.style.gridColumn = pIndex + 1; div.style.gridRow = 1; }
+          else if (pIndex < 17) { div.style.gridColumn = 12 + (pIndex - 11); div.style.gridRow = 5; }
+          else if (pIndex < 50) { let sub = pIndex - 17; div.style.gridColumn = (sub % 11) + 1; div.style.gridRow = Math.floor(sub / 11) + 2; }
+          else { let ext = pIndex - 50; div.style.gridColumn = (ext % 17  ) + 1; div.style.gridRow = Math.floor(ext / 17) + 5; }
 
           if(modoAdmin) {
               div.draggable = true;
@@ -432,7 +432,7 @@
                       const fromPosIdx = draggedSourcePosIdx;
                       const fromFilaIdx = draggedFilaIdx;
                       let sourceData;
-                      if(posiciones[fromPosIdx].tipo === 'pallet') { sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filas[fromFilaIdx])); } 
+                      if(posiciones[fromPosIdx].tipo === 'pallet') { sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filas[fromFilaIdx])); }
                       else { sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filasObjeto[fromFilaIdx])); }
 
                       if(sourceData.sku || sourceData.tipo) {
@@ -440,14 +440,14 @@
                               let targetIdx = pos.filas.findIndex(f => !f.sku);
                               if(targetIdx !== -1) {
                                   pos.filas[targetIdx] = sourceData;
-                                  if(posiciones[fromPosIdx].tipo === 'pallet') { posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; } 
+                                  if(posiciones[fromPosIdx].tipo === 'pallet') { posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; }
                                   else { posiciones[fromPosIdx].filasObjeto[fromFilaIdx] = { tipo: "", cant: 0 }; }
                               }
                           } else {
                               let targetIdx = pos.filasObjeto.findIndex(f => !f.tipo);
                               if(targetIdx !== -1) {
                                   pos.filasObjeto[targetIdx] = { tipo: sourceData.sku || sourceData.tipo, cant: sourceData.cant || 0 };
-                                  if(posiciones[fromPosIdx].tipo === 'pallet') { posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; } 
+                                  if(posiciones[fromPosIdx].tipo === 'pallet') { posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; }
                                   else { posiciones[fromPosIdx].filasObjeto[fromFilaIdx] = { tipo: "", cant: 0 }; }
                               }
                           }
@@ -471,7 +471,7 @@
               const btnX = document.createElement('div');
               btnX.className = 'btn-cerrar'; btnX.innerHTML = '✕';
               btnX.onclick = (e) => {
-                  e.stopPropagation(); 
+                  e.stopPropagation();
                   if(confirm("¿Eliminar espacio?")) {
                       posiciones.splice(pIndex, 1);
                       db.ref('patio/posiciones').set(posiciones);
@@ -620,16 +620,16 @@
       // Cálculo del ID dinámico para evitar repeticiones tras eliminaciones
       const numerosExistentes = posiciones.map(p => parseInt(p.id.split('-')[1])).filter(n => !isNaN(n));
       const siguienteId = numerosExistentes.length > 0 ? Math.max(...numerosExistentes) + 1 : 1;
-      
-      posiciones.push({ 
-          id: `S-${siguienteId}`, 
-          tipo: 'pallet', 
-          filas: Array.from({length:5},()=>({lpn:"",sku:"",desc:"",cant:0,tono:"",obs:""})), 
-          filasObjeto: Array.from({length:5},()=>({tipo:"",cant:0})) 
+
+      posiciones.push({
+          id: `S-${siguienteId}`,
+          tipo: 'pallet',
+          filas: Array.from({length:5},()=>({lpn:"",sku:"",desc:"",cant:0,tono:"",obs:""})),
+          filasObjeto: Array.from({length:5},()=>({tipo:"",cant:0}))
       });
       db.ref('patio/posiciones').set(posiciones);
   }
-  
+
   function mostrarSeccion(id) {
       document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
