@@ -404,20 +404,37 @@
       const pCont = document.getElementById('patio');
       const busqueda = document.getElementById('global-search').value.trim().toLowerCase();
       pCont.innerHTML = '';
+      
       const basura = document.createElement('div');
-      basura.className = 'obstaculo'; basura.innerHTML = `<span>CONTENEDOR DE BASURA</span>`;
+      basura.className = 'obstaculo'; 
+      basura.innerHTML = `<span>CONTENEDOR DE BASURA</span>`;
       pCont.appendChild(basura);
 
       posiciones.forEach((pos, pIndex) => {
           const div = document.createElement('div');
           let match = false;
-          if(busqueda !== "" && pos.tipo === 'pallet'){ match = pos.filas.some(f => f.sku.toLowerCase().includes(busqueda)); }
+          if(busqueda !== "" && pos.tipo === 'pallet'){ 
+              match = pos.filas.some(f => f.sku.toLowerCase().includes(busqueda)); 
+          }
           div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
 
-          if (pIndex < 11) { div.style.gridColumn = pIndex + 1; div.style.gridRow = 1; }
-          else if (pIndex < 17) { div.style.gridColumn = 12 + (pIndex - 11); div.style.gridRow = 5; }
-          else if (pIndex < 50) { let sub = pIndex - 17; div.style.gridColumn = (sub % 11) + 1; div.style.gridRow = Math.floor(sub / 11) + 2; }
-          else { let ext = pIndex - 50; div.style.gridColumn = (ext % 17  ) + 1; div.style.gridRow = Math.floor(ext / 17) + 5; }
+          // Distribución inteligente en la cuadrícula para que nunca se oculten los nuevos espacios
+          if (pIndex < 11) { 
+              div.style.gridColumn = pIndex + 1; 
+              div.style.gridRow = 1; 
+          } else if (pIndex < 17) { 
+              div.style.gridColumn = 12 + (pIndex - 11); 
+              div.style.gridRow = 5; 
+          } else if (pIndex < 50) { 
+              let sub = pIndex - 17; 
+              div.style.gridColumn = (sub % 11) + 1; 
+              div.style.gridRow = Math.floor(sub / 11) + 2; 
+          } else { 
+              // Para elementos dinámicos añadidos que superen el diseño base
+              let ext = pIndex - 50; 
+              div.style.gridColumn = (ext % 15) + 1; 
+              div.style.gridRow = Math.floor(ext / 15) + 6; 
+          }
 
           if(modoAdmin) {
               div.draggable = true;
@@ -432,23 +449,32 @@
                       const fromPosIdx = draggedSourcePosIdx;
                       const fromFilaIdx = draggedFilaIdx;
                       let sourceData;
-                      if(posiciones[fromPosIdx].tipo === 'pallet') { sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filas[fromFilaIdx])); }
-                      else { sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filasObjeto[fromFilaIdx])); }
+                      if(posiciones[fromPosIdx].tipo === 'pallet') { 
+                          sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filas[fromFilaIdx])); 
+                      } else { 
+                          sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filasObjeto[fromFilaIdx])); 
+                      }
 
                       if(sourceData.sku || sourceData.tipo) {
                           if(pos.tipo === 'pallet') {
                               let targetIdx = pos.filas.findIndex(f => !f.sku);
                               if(targetIdx !== -1) {
                                   pos.filas[targetIdx] = sourceData;
-                                  if(posiciones[fromPosIdx].tipo === 'pallet') { posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; }
-                                  else { posiciones[fromPosIdx].filasObjeto[fromFilaIdx] = { tipo: "", cant: 0 }; }
+                                  if(posiciones[fromPosIdx].tipo === 'pallet') { 
+                                      posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; 
+                                  } else { 
+                                      posiciones[fromPosIdx].filasObjeto[fromFilaIdx] = { tipo: "", cant: 0 }; 
+                                  }
                               }
                           } else {
                               let targetIdx = pos.filasObjeto.findIndex(f => !f.tipo);
                               if(targetIdx !== -1) {
                                   pos.filasObjeto[targetIdx] = { tipo: sourceData.sku || sourceData.tipo, cant: sourceData.cant || 0 };
-                                  if(posiciones[fromPosIdx].tipo === 'pallet') { posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; }
-                                  else { posiciones[fromPosIdx].filasObjeto[fromFilaIdx] = { tipo: "", cant: 0 }; }
+                                  if(posiciones[fromPosIdx].tipo === 'pallet') { 
+                                      posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; 
+                                  } else { 
+                                      posiciones[fromPosIdx].filasObjeto[fromFilaIdx] = { tipo: "", cant: 0 }; 
+                                  }
                               }
                           }
                           const updates = {};
@@ -469,7 +495,8 @@
               };
 
               const btnX = document.createElement('div');
-              btnX.className = 'btn-cerrar'; btnX.innerHTML = '✕';
+              btnX.className = 'btn-cerrar'; 
+              btnX.innerHTML = '✕';
               btnX.onclick = (e) => {
                   e.stopPropagation();
                   if(confirm("¿Eliminar espacio?")) {
@@ -485,7 +512,10 @@
           infoSpan.innerHTML = `<span class="id-piso">${pos.id}</span><span class="nivel-badge">${pos.tipo === 'pallet' ? pos.filas.filter(f => f.sku).length : ''}</span><span class="icon-objeto">⚙️</span>`;
           div.appendChild(infoSpan);
 
-          div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
+          div.onclick = () => { 
+              abiertoId = (abiertoId === pos.id) ? null : pos.id; 
+              renderPatio(); 
+          };
           if (abiertoId === pos.id) div.classList.add('abierto');
 
           let detalle = document.createElement('div');
@@ -493,7 +523,8 @@
           detalle.onclick = (e) => e.stopPropagation();
 
           const btnObj = document.createElement('button');
-          btnObj.className = 'btn-objeto-trigger'; btnObj.innerText = '+ Objeto';
+          btnObj.className = 'btn-objeto-trigger'; 
+          btnObj.innerText = '+ Objeto';
           btnObj.onclick = () => abrirModalObjeto(pIndex, 0);
           detalle.appendChild(btnObj);
 
@@ -502,6 +533,7 @@
               const data = pos.tipo === 'pallet' ? pos.filas[n] : pos.filasObjeto[n];
               b.className = `fila-btn ${pos.tipo === 'pallet' ? (data.sku ? 'con-datos' : '') : (data.tipo ? 'objeto-datos' : '')}`;
               b.innerText = pos.tipo === 'pallet' ? (data.sku ? `F${n+1}: ${data.sku}` : `Fila ${n+1}`) : (data.tipo ? `N${n+1}: ${data.tipo}` : `Nivel ${n+1}`);
+              
               if(modoAdmin) {
                   b.onclick = () => pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
                   b.draggable = true;
