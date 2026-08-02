@@ -159,9 +159,7 @@
         overflow-y: auto;
     }
     
-    #modalCamara {
-        z-index: 7000 !important; 
-    }
+    #modalCamara { z-index: 7000 !important; }
 
     .modal-content { 
         background: #2d2d2d; 
@@ -186,9 +184,7 @@
         box-sizing: border-box; 
     }
     
-    .form-group input.has-btn {
-        padding-right: 85px;
-    }
+    .form-group input.has-btn { padding-right: 85px; }
     
     .btn-scanner-input {
         position: absolute; 
@@ -220,19 +216,32 @@
     .excel-btn-container input { display: none; }
     #excel-status { font-size: 0.75rem; color: #2ecc71; font-weight: bold; margin-left: 5px; vertical-align: middle; }
 
-    /* Estilos ultra limpios para Consumo rápido */
+    /* Estilos Avanzados de la Sección de Consumo */
+    .consumo-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 20px;
+        max-width: 1000px;
+        margin: 20px auto;
+    }
     .consumo-card {
         background: var(--card);
         padding: 20px;
         border-radius: 12px;
-        max-width: 450px;
-        margin: 30px auto;
         border: 1px solid var(--danger);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        height: fit-content;
+    }
+    .historial-card {
+        background: var(--card);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--accent);
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
     .preview-foto {
         width: 100%;
-        max-height: 220px;
+        max-height: 180px;
         object-fit: cover;
         border-radius: 6px;
         margin-top: 10px;
@@ -250,6 +259,34 @@
         cursor: pointer;
         font-weight: bold;
         border: 1px dashed var(--accent);
+    }
+    .lista-bajas {
+        max-height: 500px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .item-baja {
+        background: #1e1e1e;
+        border-left: 4px solid var(--danger);
+        padding: 12px;
+        border-radius: 6px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+    .item-baja-info { flex: 1; font-size: 0.85rem; }
+    .item-baja-info strong { color: var(--accent); }
+    .item-baja-img {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #444;
+        background: #333;
+        cursor: pointer;
     }
   </style>
 </head>
@@ -276,7 +313,7 @@
   <div class="sidebar-menu">
     <div class="menu-item active" id="menu-mapa" onclick="mostrarSeccion('mapa-seccion')">🏠 Mapa de Patio</div>
     <div class="menu-item" id="menu-activos" onclick="mostrarSeccion('activos-seccion')">⚙️ Objetos y Activos</div>
-    <div class="menu-item" id="menu-consumo" onclick="mostrarSeccion('consumo-seccion')">📉 LPN a Consumir</div>
+    <div class="menu-item" id="menu-consumo" onclick="mostrarSeccion('menu-consumo')">📉 LPN a Consumir</div>
     <div class="menu-item" style="color: var(--danger);" onclick="cerrarSesion()">🚪 Salir</div>
   </div>
 </div>
@@ -291,7 +328,6 @@
     <h2 style="text-align: center;">Mapa Logístico de Patio</h2>
     <div class="controles view-only-hidden" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
       <button class="btn-login" style="width:auto; margin-top:0; padding:10px 20px;" onclick="agregarPosicion()">+ Añadir Espacio</button>
-      
       <div class="excel-btn-container">
           <label for="cargar-excel-file">📊 Cargar Excel (.csv)</label>
           <input type="file" id="cargar-excel-file" accept=".csv">
@@ -325,19 +361,6 @@
               <tbody id="cuerpo-consolidado"><tr><td colspan="2" style="text-align:center; color:#888;">Sin datos</td></tr></tbody>
             </table>
           </div>
-          <div>
-            <div class="titulo-tabla orange-t">Pallets / Contenedores</div>
-            <table class="tabla-estilizada">
-              <thead><tr><th>Tipo</th><th style="text-align:right">Cantidad</th></tr></thead>
-              <tbody id="cuerpo-pallets">
-              <tr><td>Euro Pallet</td><td class="total-val" id="cnt-euro">0</td></tr>
-              <tr><td>Mueble Pallet</td><td class="total-val" id="cnt-mueble">0</td></tr>
-              <tr><td>Cajas Sensibles</td><td class="total-val" id="cnt-cajas">0</td></tr>
-              <tr><td>Rejillas</td><td class="total-val" id="cnt-rejillas">0</td></tr>
-              <tr><td>Otros Objetos</td><td class="total-val" id="cnt-otros">0</td></tr>
-              </tbody>
-            </table>
-          </div>
         </div>
         <div class="col-derecha">
           <div class="titulo-tabla blue-t">Detalle de Ubicaciones</div>
@@ -352,73 +375,96 @@
     </div>
   </div>
 
-  <!-- SECCIÓN 3: PESTAÑA DE CONSUMO SIMPLIFICADA (SOLO FOTO Y OBSERVACIÓN) -->
+  <!-- SECCIÓN 3: CONSUMO + HISTORIAL VINCULADO CON FOTO -->
   <div id="consumo-seccion" class="section-panel">
-    <h2 style="text-align: center; color: var(--danger);">Bajas Rápidas de Patio</h2>
-    <div class="consumo-card">
-        
-        <!-- Campo para el LPN -->
-        <div class="form-group">
-            <label>Código o LPN a dar de baja</label>
-            <input type="text" id="con_lpn" placeholder="Escribe o escanea el código del Pallet...">
+    <h2 style="text-align: center; color: var(--danger);">Bajas Rápidas y Consumo de Patio</h2>
+    
+    <div class="consumo-wrapper">
+        <!-- Formulario Inteligente Completo -->
+        <div class="consumo-card">
+            <div class="form-group">
+                <label>Código o LPN a dar de baja</label>
+                <input type="text" id="con_lpn" placeholder="Escanee o escriba el LPN..." oninput="autoBuscarLpnEnPatio(this.value)">
+            </div>
+            <div class="form-group">
+                <label>SKU Vinculado (Lectura)</label>
+                <input type="text" id="con_sku" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
+            </div>
+            <div class="form-group">
+                <label>Cantidad Actual (Lectura)</label>
+                <input type="text" id="con_cant" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
+            </div>
+            <div class="form-group">
+                <label>Ubicación Actual (Lectura)</label>
+                <input type="text" id="con_ubicacion" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
+            </div>
+
+            <!-- Botón de Foto -->
+            <div class="form-group view-only-hidden">
+                <label>Evidencia Física (Foto Obligatoria)</label>
+                <label for="con_foto_file" class="btn-foto-disparador">📷 Capturar Evidencia / Tomar Foto</label>
+                <input type="file" id="con_foto_file" accept="image/*" capture="environment" onchange="previsualizarFotoConsumo(this)" style="display:none;">
+                <img id="con_foto_preview" class="preview-foto" src="" alt="Vista previa">
+            </div>
+            
+            <div class="form-group">
+                <label>Observación del Consumo</label>
+                <textarea id="con_obs" rows="3" placeholder="Detalle el motivo del consumo..."></textarea>
+            </div>
+            
+            <button class="btn-login view-only-hidden" style="background:var(--danger); width:100%; font-size:1.1rem; margin-top:15px;" onclick="ejecutarBajaConsumo()">🔥 Confirmar y Guardar Transacción</button>
         </div>
 
-        <!-- Captura de foto directa -->
-        <div class="form-group view-only-hidden">
-            <label>Evidencia Física (Foto)</label>
-            <label for="con_foto_file" class="btn-foto-disparador">📷 Abrir Cámara / Tomar Foto</label>
-            <input type="file" id="con_foto_file" accept="image/*" capture="environment" onchange="previsualizarFotoConsumo(this)" style="display:none;">
-            <img id="con_foto_preview" class="preview-foto" src="" alt="Vista previa">
+        <!-- Panel del Historial con Fotos Guardadas -->
+        <div class="historial-card">
+            <h3 style="margin-top:0; color:var(--accent);">📋 Registro de LPNs Consumidos</h3>
+            <div class="lista-bajas" id="registro-bajas-lista">
+                <div style="text-align:center; color:#888; padding-top:20px;">Cargando historial de consumos...</div>
+            </div>
         </div>
-        
-        <!-- Observación limpia -->
-        <div class="form-group">
-            <label>Observación / Motivo de la Baja</label>
-            <textarea id="con_obs" rows="4" placeholder="Escribe una pequeña observación aquí..."></textarea>
-        </div>
-        
-        <button class="btn-login view-only-hidden" style="background:var(--danger); width:100%; font-size:1.1rem; margin-top:20px;" onclick="ejecutarBajaConsumo()">🔥 Confirmar Consumo</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Escáner Flotante General -->
+<!-- Modales -->
 <div id="modalCamara" class="modal"><div class="modal-content">
   <h3>Escanear Código LPN</h3>
   <div id="lector-camara-contenedor"></div>
-  <div style="display:flex; gap:10px; margin-top:5px;">
-    <button onclick="cerrarEscaneoCamara()" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancelar</button>
-  </div>
+  <button onclick="cerrarEscaneoCamara()" style="background:#555; width:100%; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancelar</button>
 </div></div>
 
-<!-- Modal Principal de Info Pallet -->
 <div id="modalDatos" class="modal"><div class="modal-content">
   <h3>Info Pallet</h3>
   <div class="form-group">
     <label>LPN</label>
-    <input type="text" id="lpn_num" class="has-btn" placeholder="Escanee o escriba...">
+    <input type="text" id="lpn_num" class="has-btn">
     <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara('mapa')">📷 Cámara</button>
   </div>
   <div class="form-group"><label>SKU</label><input type="text" id="sku"></div>
   <div class="form-group"><label>Descripción</label><input type="text" id="descripcion"></div>
   <div class="form-group"><label>Cantidad</label><input type="number" id="cantidad"></div>
-  <div class="form-group"><label>Tonalidad</label><input type="text" id="tonalidad" placeholder="Ej: Lote A"></div>
+  <div class="form-group"><label>Tonalidad</label><input type="text" id="tonalidad"></div>
   <div class="form-group"><label>Observación</label><input type="text" id="observacion"></div>
   <div style="display:flex; gap:10px; margin-top:15px;">
-    <button onclick="guardarDatos()" style="background:var(--accent); flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Guardar</button>
-    <button onclick="cerrarModal('modalDatos')" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer;">Cerrar</button>
+    <button onclick="guardarDatos()" style="background:var(--accent); flex:1; border:none; color:white; padding:10px; border-radius:6px; font-weight:bold;">Guardar</button>
+    <button onclick="cerrarModal('modalDatos')" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px;">Cerrar</button>
   </div>
 </div></div>
 
 <div id="modalObjeto" class="modal"><div class="modal-content">
   <h3>Registrar Objeto</h3>
-  <div class="form-group"><label>Tipo (Euro, Mueble, etc)</label><input type="text" id="objTipo"></div>
+  <div class="form-group"><label>Tipo</label><input type="text" id="objTipo"></div>
   <div class="form-group"><label>Cantidad</label><input type="number" id="objCant"></div>
   <div style="display:flex; gap:10px; margin-top:15px;">
-    <button onclick="guardarObjeto()" style="background:var(--objeto); flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer;">Guardar</button>
-    <button onclick="cerrarModal('modalObjeto')" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer;">X</button>
+    <button onclick="guardarObjeto()" style="background:var(--objeto); flex:1; border:none; color:white; padding:10px; border-radius:6px;">Guardar</button>
+    <button onclick="cerrarModal('modalObjeto')" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px;">X</button>
   </div>
 </div></div>
+
+<!-- Modal para Ampliar la Foto Guardada -->
+<div id="modalFotoGrande" class="modal" onclick="cerrarModal('modalFotoGrande')">
+    <img id="img-ampliada" src="" style="max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 5px 25px rgba(0,0,0,0.8);">
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
@@ -441,142 +487,67 @@
   let modoAdmin = false;
   let html5QrcodeScanner = null;
   let abiertoId = null;
-  let draggedItemIndex = null;
-  let draggedFilaIdx = null;
-  let draggedSourcePosIdx = null;
-  let editandoContexto = { pIndex: null, nIndex: null };
   let posiciones = [];
   let baseDatosExcel = {};
-  let flujoScannerActivo = "mapa";
+  let fotoBase64Global = ""; 
 
+  // Escuchar Cambios en Posiciones
   db.ref('patio/posiciones').on('value', (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-          posiciones = data;
-          renderPatio();
-      } else {
-          posiciones = Array.from({length: 8}, (_, i) => ({
-              id: `S-${i+1}`, tipo: 'pallet',
-              filas: Array.from({length: 5}, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" })),
-              filasObjeto: Array.from({length: 5}, () => ({ tipo: "", cant: 0 }))
-          }));
-          db.ref('patio/posiciones').set(posiciones);
-      }
+      if (data) { posiciones = data; renderPatio(); }
   });
 
-  document.getElementById('cargar-excel-file').addEventListener('change', function(e) {
-      const archivo = e.target.files[0];
-      if (!archivo) return;
-
-      const lector = new FileReader();
-      lector.onload = function(evt) {
-          const contenido = evt.target.result;
-          const lineas = contenido.split(/\r?\n/);
-          if (lineas.length < 2) return;
-
-          const sep = lineas[0].includes(';') ? ';' : ',';
-          const columnas = lineas[0].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
-
-          const idxLpn = columnas.indexOf('Número de LPN');
-          const idxSku = columnas.indexOf('SKU');
-          const idxDesc = columnas.indexOf('Descripción de artículo');
-          const idxCant = columnas.indexOf('Un Actual');
-
-          if (idxLpn === -1 || idxSku === -1 || idxDesc === -1 || idxCant === -1) {
-              alert("Columnas requeridas no encontradas.");
-              return;
-          }
-
-          let totalRegistros = 0;
-          baseDatosExcel = {}; 
-
-          for (let i = 1; i < lineas.length; i++) {
-              if (!lineas[i].trim()) continue;
-              const celdas = lineas[i].split(sep).map(c => c.trim().replace(/^="?|"?$/g, '').replace(/^"|"$/g, ''));
-              const lpn = celdas[idxLpn];
-              if (lpn) {
-                  baseDatosExcel[lpn] = {
-                      sku: celdas[idxSku] || "",
-                      desc: celdas[idxDesc] || "",
-                      cant: parseInt(celdas[idxCant]) || 0
-                  };
-                  totalRegistros++;
-              }
-          }
-          document.getElementById('excel-status').innerText = `✅ ${totalRegistros} LPNs listos.`;
-      };
-      lector.readAsText(archivo, 'UTF-8');
-  });
-
-  function activarPistolaCamara(origen) {
-      flujoScannerActivo = origen;
-      document.getElementById('modalCamara').style.display = 'flex';
+  // Escuchar Cambios en el Historial de Bajas / Consumos
+  db.ref('patio/historial_bajas').on('value', (snapshot) => {
+      const listaContenedor = document.getElementById('registro-bajas-lista');
+      listaContenedor.innerHTML = "";
+      const data = snapshot.val();
       
-      if (!html5QrcodeScanner) {
-          html5QrcodeScanner = new Html5Qrcode("lector-camara-contenedor");
+      if (!data) {
+          listaContenedor.innerHTML = `<div style="text-align:center; color:#888; padding-top:20px;">No hay registros de consumos previos.</div>`;
+          return;
       }
 
-      const config = { 
-          fps: 20, 
-          qrbox: function(width, height) {
-              return { width: Math.floor(width * 0.85), height: Math.floor(height * 0.45) }
-          },
-          aspectRatio: 1.777778 
-      };
-
-      html5QrcodeScanner.start(
-          { facingMode: "environment" }, 
-          config, 
-          onScanSuccess, 
-          onScanFailure
-      ).catch(err => {
-          alert("Error: " + err);
-          cerrarEscaneoCamara();
+      Object.values(data).reverse().forEach(item => {
+          const div = document.createElement('div');
+          div.className = "item-baja";
+          
+          let imgTag = item.foto ? `<img src="${item.foto}" class="item-baja-img" onclick="ampliarImagen('${item.foto}')">` : `<div class="item-baja-img" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🚫</div>`;
+          
+          div.innerHTML = `
+              ${imgTag}
+              <div class="item-baja-info">
+                  <div><strong>LPN:</strong> ${item.lpn} | <strong>SKU:</strong> ${item.sku}</div>
+                  <div><strong>Cant:</strong> ${item.cant} uds. | <strong>Ubicación:</strong> ${item.ubicacion}</div>
+                  <div style="color:#aaa; font-size:0.75rem; margin-top:3px;"><strong>Obs:</strong> ${item.observacion || 'Sin observaciones'}</div>
+              </div>
+          `;
+          listaContenedor.appendChild(div);
       });
-  }
+  });
 
-  function onScanSuccess(decodedText) {
-      if (navigator.vibrate) navigator.vibrate(100);
-      const codigoLimpio = decodedText.trim();
-      cerrarEscaneoCamara();
-      
-      if (flujoScannerActivo === "mapa") {
-          document.getElementById('lpn_num').value = codigoLimpio;
-          ejecutarBusquedaLpn(codigoLimpio);
-      }
-  }
+  function autoBuscarLpnEnPatio(valorLpn) {
+      const lpnLimpio = valorLpn.trim();
+      if(!lpnLimpio) { limpiarCamposLectura(); return; }
 
-  function onScanFailure(error) {}
+      let encontrado = false;
+      posiciones.forEach((pos) => {
+          if (pos.tipo === 'pallet') {
+              pos.filas.forEach((fila, idx) => {
+                  if (fila.lpn === lpnLimpio) {
+                      document.getElementById('con_sku').value = fila.sku || "Sin SKU";
+                      document.getElementById('con_cant').value = fila.cant || 0;
+                      document.getElementById('con_ubicacion').value = `${pos.id} (Fila ${idx+1})`;
+                      encontrado = true;
+                  }
+              });
+          }
+      });
 
-  document.getElementById('lpn_num').onkeydown = function(e) {
-      if (e.key === 'Enter') {
-          e.preventDefault();
-          ejecutarBusquedaLpn(this.value.trim());
-      }
-  };
-
-  function cerrarEscaneoCamara() {
-      if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
-          html5QrcodeScanner.stop().then(() => {
-              document.getElementById('modalCamara').style.display = 'none';
-          }).catch(() => {
-              document.getElementById('modalCamara').style.display = 'none';
-          });
-      } else {
-          document.getElementById('modalCamara').style.display = 'none';
-      }
-  }
-
-  function ejecutarBusquedaLpn(lpnCodigo) {
-      const infoExcel = baseDatosExcel[lpnCodigo];
-      if (infoExcel) {
-          document.getElementById('sku').value = infoExcel.sku;
-          document.getElementById('descripcion').value = infoExcel.desc;
-          document.getElementById('cantidad').value = infoExcel.cant;
-          document.getElementById('tonalidad').focus();
-      } else {
-          alert(`Código "${lpnCodigo}" no figura en el CSV cargado.`);
-          document.getElementById('sku').focus();
+      if(!encontrado) {
+          document.getElementById('con_sku').value = "No encontrado en patio";
+          document.getElementById('con_cant').value = "0";
+          document.getElementById('con_ubicacion').value = "Desconocida";
       }
   }
 
@@ -587,22 +558,45 @@
           reader.onload = function(e) {
               img.src = e.target.result;
               img.style.display = 'block';
+              
+              // Redimensionar imagen para no sobrecargar Firebase
+              const image = new Image();
+              image.src = e.target.result;
+              image.onload = function() {
+                  const canvas = document.createElement('canvas');
+                  const max_size = 400; // tamaño óptimo y liviano
+                  let width = image.width;
+                  let height = image.height;
+                  if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
+                  else { if (height > max_size) { width *= max_size / height; height = max_size; } }
+                  canvas.width = width;
+                  canvas.height = height;
+                  canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+                  fotoBase64Global = canvas.toDataURL('image/jpeg', 0.7); // compresión fluida
+              }
           }
           reader.readAsDataURL(input.files[0]);
       }
   }
 
   function ejecutarBajaConsumo() {
-      const lpnABuscar = document.getElementById('con_lpn').value.trim();
-      if (!lpnABuscar) return alert("Por favor escriba o escanee un código/LPN.");
+      const lpn = document.getElementById('con_lpn').value.trim();
+      const sku = document.getElementById('con_sku').value;
+      const cant = document.getElementById('con_cant').value;
+      const ubicacion = document.getElementById('con_ubicacion').value;
+      const obs = document.getElementById('con_obs').value.trim();
 
-      let modificado = false;
+      if (!lpn) return alert("Por favor inserte un LPN.");
+      if (!fotoBase64Global) return alert("Es obligatorio capturar una fotografía como evidencia física.");
+
       let posIndexAfectado = null;
+      let modificado = false;
 
+      // Borrar físicamente del mapa logístico en tiempo real
       posiciones.forEach((pos, pIdx) => {
           if (pos.tipo === 'pallet') {
               pos.filas.forEach((fila, fIdx) => {
-                  if (fila.lpn === lpnABuscar) {
+                  if (fila.lpn === lpn) {
                       posiciones[pIdx].filas[fIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" };
                       modificado = true;
                       posIndexAfectado = pIdx;
@@ -611,22 +605,45 @@
           }
       });
 
-      if (modificado) {
-          db.ref('patio/posiciones/' + posIndexAfectado).set(posiciones[posIndexAfectado]).then(() => {
-              alert(`🔥 LPN ${lpnABuscar} removido con éxito del mapa de patio.`);
-              limpiarFormularioConsumo();
-          });
-      } else {
-          alert(`El código ${lpnABuscar} no estaba asignado en el mapa visual, pero la baja y observación se registraron.`);
+      // Crear objeto del historial
+      const registroBaja = {
+          lpn: lpn,
+          sku: sku,
+          cant: cant,
+          ubicacion: ubicacion,
+          observacion: obs,
+          foto: fotoBase64Global,
+          timestamp: Date.now()
+      };
+
+      // Guardar en el historial de Firebase
+      db.ref('patio/historial_bajas').push(registroBaja).then(() => {
+          if(modificado && posIndexAfectado !== null) {
+              db.ref('patio/posiciones/' + posIndexAfectado).set(posiciones[posIndexAfectado]);
+          }
+          alert(`✅ Consumo guardado e historial actualizado con fotografía para el LPN: ${lpn}`);
           limpiarFormularioConsumo();
-      }
+      });
+  }
+
+  function ampliarImagen(src) {
+      document.getElementById('img-ampliada').src = src;
+      document.getElementById('modalFotoGrande').style.display = 'flex';
   }
 
   function limpiarFormularioConsumo() {
       document.getElementById('con_lpn').value = '';
+      limpiarCamposLectura();
       document.getElementById('con_obs').value = '';
       document.getElementById('con_foto_file').value = '';
       document.getElementById('con_foto_preview').style.display = 'none';
+      fotoBase64Global = "";
+  }
+
+  function limpiarCamposLectura() {
+      document.getElementById('con_sku').value = '';
+      document.getElementById('con_cant').value = '';
+      document.getElementById('con_ubicacion').value = '';
   }
 
   function iniciarSesion() {
@@ -649,6 +666,50 @@
       } else { alert("Error de acceso"); }
   }
 
+  function mostrarSeccion(id) {
+      document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
+      
+      if(id === 'menu-mapa') document.getElementById('mapa-seccion').classList.add('active');
+      else if(id === 'menu-activos') document.getElementById('activos-seccion').classList.add('active');
+      else if(id === 'menu-consumo') document.getElementById('consumo-seccion').classList.add('active');
+      
+      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+  }
+
+  // Lector de CSV Maestro
+  document.getElementById('cargar-excel-file').addEventListener('change', function(e) {
+      const archivo = e.target.files[0];
+      if (!archivo) return;
+      const lector = new FileReader();
+      lector.onload = function(evt) {
+          const contenido = evt.target.result;
+          const lineas = contenido.split(/\r?\n/);
+          if (lineas.length < 2) return;
+          const sep = lineas[0].includes(';') ? ';' : ',';
+          const columnas = lineas[0].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+          const idxLpn = columnas.indexOf('Número de LPN');
+          const idxSku = columnas.indexOf('SKU');
+          const idxDesc = columnas.indexOf('Descripción de artículo');
+          const idxCant = columnas.indexOf('Un Actual');
+
+          if (idxLpn === -1 || idxSku === -1 || idxDesc === -1 || idxCant === -1) return alert("Columnas incorrectas");
+
+          baseDatosExcel = {};
+          let total = 0;
+          for (let i = 1; i < lineas.length; i++) {
+              if (!lineas[i].trim()) continue;
+              const celdas = lineas[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+              if (celdas[idxLpn]) {
+                  baseDatosExcel[celdas[idxLpn]] = { sku: celdas[idxSku] || "", desc: celdas[idxDesc] || "", cant: parseInt(celdas[idxCant]) || 0 };
+                  total++;
+              }
+          }
+          document.getElementById('excel-status').innerText = `✅ ${total} LPNs listos.`;
+      };
+      lector.readAsText(archivo, 'UTF-8');
+  });
+
   function renderPatio() {
       const pCont = document.getElementById('patio');
       const busqueda = document.getElementById('global-search').value.trim().toLowerCase();
@@ -667,110 +728,23 @@
           }
           div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
 
-          if (pIndex < 11) { 
-              div.style.gridColumn = pIndex + 1; 
-              div.style.gridRow = 1; 
-          } else if (pIndex < 17) { 
-              div.style.gridColumn = 12 + (pIndex - 11); 
-              div.style.gridRow = 5; 
-          } else if (pIndex < 50) { 
-              let sub = pIndex - 17; 
-              div.style.gridColumn = (sub % 11) + 1; 
-              div.style.gridRow = Math.floor(sub / 11) + 2; 
-          } else { 
-              let ext = pIndex - 50; 
-              div.style.gridColumn = (ext % 15) + 1; 
-              div.style.gridRow = Math.floor(ext / 15) + 6; 
-          }
-
-          if(modoAdmin) {
-              div.draggable = true;
-              div.ondragstart = (e) => { draggedItemIndex = pIndex; e.dataTransfer.setData("type", "posicion"); };
-              div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
-              div.ondragleave = () => div.classList.remove('drag-over');
-              div.ondrop = (e) => {
-                  e.preventDefault();
-                  div.classList.remove('drag-over');
-                  const type = e.dataTransfer.getData("type");
-                  if (type === "fila") {
-                      const fromPosIdx = draggedSourcePosIdx;
-                      const fromFilaIdx = draggedFilaIdx;
-                      let sourceData = posiciones[fromPosIdx].tipo === 'pallet' ? 
-                          JSON.parse(JSON.stringify(posiciones[fromPosIdx].filas[fromFilaIdx])) : 
-                          JSON.parse(JSON.stringify(posiciones[fromPosIdx].filasObjeto[fromFilaIdx]));
-
-                      if(sourceData.sku || sourceData.tipo) {
-                          if(pos.tipo === 'pallet') {
-                              let targetIdx = pos.filas.findIndex(f => !f.sku);
-                              if(targetIdx !== -1) {
-                                  pos.filas[targetIdx] = sourceData;
-                                  if(posiciones[fromPosIdx].tipo === 'pallet') { 
-                                      posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; 
-                                  } else { 
-                                      posiciones[fromPosIdx].filasObjeto[fromFilaIdx] = { tipo: "", cant: 0 }; 
-                                  }
-                              }
-                          } else {
-                              let targetIdx = pos.filasObjeto.findIndex(f => !f.tipo);
-                              if(targetIdx !== -1) {
-                                  pos.filasObjeto[targetIdx] = { tipo: sourceData.sku || sourceData.tipo, cant: sourceData.cant || 0 };
-                                  if(posiciones[fromPosIdx].tipo === 'pallet') { 
-                                      posiciones[fromPosIdx].filas[fromFilaIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }; 
-                                  } else { 
-                                      posiciones[fromPosIdx].filasObjeto[fromFilaIdx] = { tipo: "", cant: 0 }; 
-                                  }
-                              }
-                          }
-                          const updates = {};
-                          updates['patio/posiciones/' + fromPosIdx] = posiciones[fromPosIdx];
-                          updates['patio/posiciones/' + pIndex] = posiciones[pIndex];
-                          db.ref().update(updates);
-                      }
-                  } else if (draggedItemIndex !== null && draggedItemIndex !== pIndex) {
-                      const temp = posiciones[draggedItemIndex];
-                      posiciones[draggedItemIndex] = posiciones[pIndex];
-                      posiciones[pIndex] = temp;
-                      const updates = {};
-                      updates['patio/posiciones/' + draggedItemIndex] = posiciones[draggedItemIndex];
-                      updates['patio/posiciones/' + pIndex] = posiciones[pIndex];
-                      db.ref().update(updates);
-                      draggedItemIndex = null;
-                  }
-              };
-
-              const btnX = document.createElement('div');
-              btnX.className = 'btn-cerrar'; 
-              btnX.innerHTML = '✕';
-              btnX.onclick = (e) => {
-                  e.stopPropagation();
-                  if(confirm("¿Eliminar espacio?")) {
-                      posiciones.splice(pIndex, 1);
-                      db.ref('patio/posiciones').set(posiciones);
-                  }
-              };
-              div.appendChild(btnX);
-          }
+          // Distribución en rejilla
+          if (pIndex < 11) { div.style.gridColumn = pIndex + 1; div.style.gridRow = 1; } 
+          else if (pIndex < 17) { div.style.gridColumn = 12 + (pIndex - 11); div.style.gridRow = 5; } 
+          else if (pIndex < 50) { let sub = pIndex - 17; div.style.gridColumn = (sub % 11) + 1; div.style.gridRow = Math.floor(sub / 11) + 2; } 
+          else { let ext = pIndex - 50; div.style.gridColumn = (ext % 15) + 1; div.style.gridRow = Math.floor(ext / 15) + 6; }
 
           const infoSpan = document.createElement('div');
           infoSpan.style.pointerEvents = 'none';
           infoSpan.innerHTML = `<span class="id-piso">${pos.id}</span><span class="nivel-badge">${pos.tipo === 'pallet' ? pos.filas.filter(f => f.sku).length : ''}</span><span class="icon-objeto">⚙️</span>`;
           div.appendChild(infoSpan);
 
-          div.onclick = () => { 
-              abiertoId = (abiertoId === pos.id) ? null : pos.id; 
-              renderPatio(); 
-          };
+          div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
           if (abiertoId === pos.id) div.classList.add('abierto');
 
           let detalle = document.createElement('div');
           detalle.className = 'detalle-pila';
           detalle.onclick = (e) => e.stopPropagation();
-
-          const btnObj = document.createElement('button');
-          btnObj.className = 'btn-objeto-trigger'; 
-          btnObj.innerText = '+ Objeto';
-          btnObj.onclick = () => abrirModalObjeto(pIndex, 0);
-          detalle.appendChild(btnObj);
 
           for (let n = 0; n < 5; n++) {
               const b = document.createElement('button');
@@ -780,22 +754,6 @@
               
               if(modoAdmin) {
                   b.onclick = () => pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
-                  b.draggable = true;
-                  b.ondragstart = (e) => { e.stopPropagation(); draggedFilaIdx = n; draggedSourcePosIdx = pIndex; e.dataTransfer.setData("type", "fila"); };
-                  b.ondragover = (e) => { e.preventDefault(); b.classList.add('drag-over-row'); };
-                  b.ondragleave = () => b.classList.remove('drag-over-row');
-                  b.ondrop = (e) => {
-                      e.stopPropagation();
-                      b.classList.remove('drag-over-row');
-                      const type = e.dataTransfer.getData("type");
-                      if (type === "fila" && draggedSourcePosIdx === pIndex) {
-                          const arrayActual = pos.tipo === 'pallet' ? pos.filas : pos.filasObjeto;
-                          const temp = JSON.parse(JSON.stringify(arrayActual[draggedFilaIdx]));
-                          arrayActual[draggedFilaIdx] = arrayActual[n];
-                          arrayActual[n] = temp;
-                          db.ref('patio/posiciones/' + pIndex).set(posiciones[pIndex]);
-                      }
-                  };
               }
               detalle.appendChild(b);
           }
@@ -808,23 +766,13 @@
   function abrirModal(p, n) {
       editandoContexto = { pIndex: p, nIndex: n };
       const d = posiciones[p].filas[n];
-      
       document.getElementById('sku').value = d.sku || "";
       document.getElementById('lpn_num').value = d.lpn || "";
       document.getElementById('cantidad').value = d.cant || 0;
       document.getElementById('descripcion').value = d.desc || "";
       document.getElementById('tonalidad').value = d.tono || "";
       document.getElementById('observacion').value = d.obs || "";
-      
       document.getElementById('modalDatos').style.display = 'flex';
-  }
-
-  function abrirModalObjeto(p, n) {
-      editandoContexto = { pIndex: p, nIndex: n };
-      const d = posiciones[p].filasObjeto[n];
-      document.getElementById('objTipo').value = d.tipo || "";
-      document.getElementById('objCant').value = d.cant || 0;
-      document.getElementById('modalObjeto').style.display = 'flex';
   }
 
   function guardarDatos() {
@@ -839,85 +787,29 @@
       db.ref('patio/posiciones/' + pIndex).set(posiciones[pIndex]).then(() => cerrarModal('modalDatos'));
   }
 
-  function guardarObjeto() {
-      const { pIndex, nIndex } = editandoContexto;
-      posiciones[pIndex].tipo = 'objeto';
-      const f = posiciones[pIndex].filasObjeto[nIndex];
-      f.tipo = document.getElementById('objTipo').value;
-      f.cant = parseInt(document.getElementById('objCant').value) || 0;
-      db.ref('patio/posiciones/' + pIndex).set(posiciones[pIndex]).then(() => cerrarModal('modalObjeto'));
-  }
-
   function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
-
+  function cerrarSesion() { location.reload(); }
+  function filtrarTodo() { renderPatio(); }
+  
   function actualizarTablas() {
-      const busqueda = document.getElementById('global-search').value.trim().toLowerCase();
-      let skus = {}; let tCant = 0; let tLpns = 0;
-      let cnt = { euro:0, mueble:0, cajas:0, rejillas:0, otros:0 };
-      let detalleHtml = '';
-
+      let skus = {}; let tCant = 0; let tLpns = 0; let detalleHtml = '';
       posiciones.forEach(pos => {
           if(pos.tipo === 'pallet') {
               pos.filas.forEach((f, i) => {
                   if(f.sku) {
                       skus[f.sku] = (skus[f.sku] || 0) + f.cant;
                       tCant += f.cant; tLpns++;
-                      if(busqueda === "" || f.sku.toLowerCase().includes(busqueda)) {
-                        detalleHtml += `<tr><td>${pos.id} (F${i+1})</td><td>${f.sku}</td><td>${f.tono || '-'}</td><td>${f.cant}</td><td>${f.lpn}</td></tr>`;
-                      }
-                  }
-              });
-          } else {
-              pos.filasObjeto.forEach(o => {
-                  if(o.tipo) {
-                      let t = o.tipo.toLowerCase();
-                      if(t.includes('euro')) cnt.euro += o.cant;
-                      else if(t.includes('mueble')) cnt.mueble += o.cant;
-                      else if(t.includes('caja')) cnt.cajas += o.cant;
-                      else if(t.includes('rejilla')) cnt.rejillas += o.cant;
-                      else cnt.otros += o.cant;
+                      detalleHtml += `<tr><td>${pos.id} (F${i+1})</td><td>${f.sku}</td><td>${f.tono || '-'}</td><td>${f.cant}</td><td>${f.lpn}</td></tr>`;
                   }
               });
           }
       });
-
       document.getElementById('res-skus').innerText = Object.keys(skus).length;
       document.getElementById('res-lpns').innerText = tLpns;
       document.getElementById('res-cant').innerText = tCant;
-      document.getElementById('cuerpo-consolidado').innerHTML = Object.entries(skus).map(([s,c])=>`<tr><td>${s}</td><td class="total-val">${c}</td></tr>`).join('') || '<tr><td colspan="2" style="text-align:center">Sin datos</td></tr>';
-      document.getElementById('cnt-euro').innerText = cnt.euro;
-      document.getElementById('cnt-mueble').innerText = cnt.mueble;
-      document.getElementById('cnt-cajas').innerText = cnt.cajas;
-      document.getElementById('cnt-rejillas').innerText = cnt.rejillas;
-      document.getElementById('cnt-otros').innerText = cnt.otros;
+      document.getElementById('cuerpo-consolidado').innerHTML = Object.entries(skus).map(([s,c])=>`<tr><td>${s}</td><td class="total-val">${c}</td></tr>`).join('');
       document.getElementById('cuerpo-detalle').innerHTML = detalleHtml || '<tr><td colspan="5" style="text-align:center">No hay activos registrados</td></tr>';
   }
-
-  function agregarPosicion() {
-      const numerosExistentes = posiciones.map(p => parseInt(p.id.split('-')[1])).filter(n => !isNaN(n));
-      const siguienteId = numerosExistentes.length > 0 ? Math.max(...numerosExistentes) + 1 : 1;
-
-      posiciones.push({
-          id: `S-${siguienteId}`,
-          tipo: 'pallet',
-          filas: Array.from({length:5},()=>({lpn:"",sku:"",desc:"",cant:0,tono:"",obs:""})),
-          filasObjeto: Array.from({length:5},()=>({tipo:"",cant:0}))
-      });
-      db.ref('patio/posiciones').set(posiciones);
-  }
-
-  function mostrarSeccion(id) {
-      document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      
-      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-      if(id === 'mapa-seccion') document.getElementById('menu-mapa').classList.add('active');
-      if(id === 'activos-seccion') document.getElementById('menu-activos').classList.add('active');
-      if(id === 'consumo-seccion') document.getElementById('menu-consumo').classList.add('active');
-  }
-
-  function cerrarSesion() { location.reload(); }
-  function filtrarTodo() { renderPatio(); }
 </script>
 </body>
 </html>
