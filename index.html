@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Patio Pro - Gestión Mixta Dinámica</title>
+  <title>Patio Pro - Escáner de LPN por Cámara</title>
   <style>
-    /* Estilos originales preservados */
     :root {
         --bg: #1a1a1a;
         --sidebar-bg: #212529;
@@ -106,12 +105,12 @@
     .posicion.drag-over { border: 2px dashed var(--accent); background: rgba(52, 152, 219, 0.1); }
     .posicion.es-objeto { background: var(--objeto) !important; border-color: #bdc3c7; }
 
+    .encontrado { animation: parpadeo-busqueda 1s infinite; z-index: 10; }
     @keyframes parpadeo-busqueda {
         0% { background: var(--card); border-color: var(--accent); }
         50% { background: var(--accent); border-color: white; }
         100% { background: var(--card); border-color: var(--accent); }
     }
-    .encontrado { animation: parpadeo-busqueda 1s infinite; z-index: 10; }
 
     .search-container { display: flex; justify-content: center; margin-bottom: 20px; }
     .search-input { width: 300px; padding: 10px; border-radius: 20px; border: 1px solid var(--accent); background: #111; color: white; padding-left: 15px; }
@@ -121,7 +120,6 @@
         width: 22px; height: 22px; font-size: 12px; display: none; justify-content: center; align-items: center; border: 2px solid #fff; z-index: 150;
     }
     .posicion:hover .btn-cerrar { display: flex; }
-    body.viewer-mode .btn-cerrar { display: none !important; }
 
     .obstaculo {
         grid-column: 12; grid-row: 1 / span 4; background: var(--obstacle); border: 3px solid #222; border-radius: 4px;
@@ -144,24 +142,29 @@
         background: #444; border: 1px solid #555; color: white; padding: 5px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;
         text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative;
     }
-    .fila-btn.drag-over-row { border-top: 2px solid var(--accent); background: rgba(52, 152, 219, 0.2); }
     .fila-btn.con-datos { border-left: 4px solid var(--pallet); }
     .fila-btn.objeto-datos { border-left: 4px solid #333; background: #666; }
 
     .btn-objeto-trigger { background: #2980b9; color: white; font-weight: bold; margin-bottom: 5px; border: 1px solid #fff; cursor: pointer; padding: 5px; border-radius: 4px; font-size: 0.7rem; }
 
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; }
-    .modal-content { background: #2d2d2d; padding: 20px; border-radius: 12px; width: 300px; border: 1px solid var(--accent); }
-    .form-group { margin-bottom: 10px; }
+    .modal-content { background: #2d2d2d; padding: 20px; border-radius: 12px; width: 310px; border: 1px solid var(--accent); box-sizing: border-box; }
+    .form-group { margin-bottom: 10px; position: relative; }
     .form-group label { display: block; font-size: 0.7rem; color: #aaa; margin-bottom: 3px; }
-    .form-group input, .form-group textarea { width: 100%; background: #1a1a1a; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; box-sizing: border-box; }
+    .form-group input { width: 100%; background: #1a1a1a; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; box-sizing: border-box; }
+    
+    /* Botón especial para detonar la cámara dentro del input LPN */
+    .btn-scanner-input {
+        position: absolute; right: 5px; top: 18px; background: var(--accent); border: none; color: white;
+        padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold;
+    }
 
     .lpn-grid-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
     .lpn-card { background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid #444; cursor: pointer; position: relative; }
     .lpn-card img { width: 100%; height: 180px; object-fit: cover; }
-    .link-crear { color: var(--accent); display: block; margin-top: 15px; font-size: 0.8rem; cursor: pointer; text-decoration: underline; }
     
-    /* Contenedor estilizado para la carga de Excel */
+    /* Contenedor adaptado para el lector de cámara */
+    #lector-camara-contenedor { width: 100%; height: 230px; background: #111; border-radius: 8px; overflow: hidden; margin-bottom: 10px; border: 1px dashed #666; }
     .excel-btn-container { display: inline-flex; align-items: center; background: #27ae60; padding: 8px 15px; border-radius: 6px; border: 1px solid #2ecc71; margin-left: 10px; gap: 8px; vertical-align: middle; }
     .excel-btn-container label { font-size: 0.8rem; font-weight: bold; color: white; cursor: pointer; margin: 0; }
     .excel-btn-container input { display: none; }
@@ -176,14 +179,13 @@
     <input type="text" id="user-in" placeholder="Usuario">
     <input type="password" id="pass-in" placeholder="Contraseña">
     <button class="btn-login" onclick="iniciarSesion()">Ingresar</button>
-    <span class="link-crear" onclick="crearCuenta()">¿No tienes cuenta? Crear una ahora</span>
   </div>
 </div>
 
 <div class="sidebar">
   <div class="sidebar-header"><span>📦 PatioPro</span></div>
   <div class="sidebar-user">
-    <div id="user-avatar-initial" class="user-avatar">R</div>
+    <div class="user-avatar">R</div>
     <div>
       <div id="current-username" style="font-weight: bold;">Cargando...</div>
       <div id="current-role" style="font-size: 0.7rem; color: #888;">Rol</div>
@@ -191,7 +193,7 @@
   </div>
   <div class="sidebar-menu">
     <div class="menu-item active" onclick="mostrarSeccion('mapa-seccion')">🏠 Mapa de Patio</div>
-    <div class="menu-item" onclick="mostrarSeccion('lpn-seccion')">📑 LPN sin consumir</div>
+    <div class="menu-item" onclick="mostrarSeccion('lpn-seccion')">📑 LPN Fotos Historial</div>
     <div class="menu-item" onclick="mostrarSeccion('activos-seccion')">⚙️ Objetos y Activos</div>
     <div class="menu-item" style="color: var(--danger);" onclick="cerrarSesion()">🚪 Salir</div>
   </div>
@@ -207,7 +209,6 @@
     <div class="controles view-only-hidden" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
       <button class="btn-login" style="width:auto; margin-top:0; padding:10px 20px;" onclick="agregarPosicion()">+ Añadir Espacio</button>
       
-      <!-- Cargador exclusivo de Excel incorporado limpiamente -->
       <div class="excel-btn-container">
           <label for="cargar-excel-file">📊 Cargar Excel (.csv)</label>
           <input type="file" id="cargar-excel-file" accept=".csv">
@@ -218,10 +219,7 @@
   </div>
 
   <div id="lpn-seccion" class="section-panel">
-    <h2 style="text-align: center;">LPN sin consumir</h2>
-    <div class="controles view-only-hidden">
-      <button class="btn-login" style="width:auto; margin-top:0; padding:10px 20px;" onclick="abrirCamara()">+ Agregar Foto</button>
-    </div>
+    <h2 style="text-align: center;">Historial Fotográfico LPN</h2>
     <div class="lpn-grid-list" id="lpn-lista"></div>
   </div>
 
@@ -236,7 +234,7 @@
               <thead><tr><th>Concepto</th><th style="text-align:right">Total</th></tr></thead>
               <tbody>
               <tr><td>SKUs Diferentes</td><td class="total-val" id="res-skus">0</td></tr>
-              <tr><td>LPNs / Niveles Ocupados</td><td class="total-val" id="res-lpns">0</td></tr>
+              <tr><td>LPNs Ocupados</td><td class="total-val" id="res-lpns">0</td></tr>
               <tr><td>Suma Cantidades</td><td class="total-val" id="res-cant">0</td></tr>
               </tbody>
             </table>
@@ -266,7 +264,7 @@
           <div class="titulo-tabla blue-t">Detalle de Ubicaciones</div>
           <div style="max-height: 700px; overflow-y: auto; border: 1px solid #333; border-radius: 8px;">
             <table class="tabla-estilizada">
-              <thead><tr><th>Ubicación</th><th>SKU / Objeto</th><th>Tono</th><th>Cant.</th><th>Info Adicional</th></tr></thead>
+              <thead><tr><th>Ubicación</th><th>SKU / Objeto</th><th>Tono</th><th>Cant.</th><th>LPN</th></tr></thead>
               <tbody id="cuerpo-detalle"><tr><td colspan="5" style="text-align:center; color:#888;">No hay activos registrados</td></tr></tbody>
             </table>
           </div>
@@ -276,19 +274,22 @@
   </div>
 </div>
 
+<!-- Modal Escáner Rediseñado con Lector Visual Integrado -->
 <div id="modalCamara" class="modal"><div class="modal-content">
-  <video id="video" autoplay style="width:100%; border-radius:8px;"></video>
-  <canvas id="canvas" style="display:none;"></canvas>
-  <textarea id="lpn-obs" placeholder="Observación..." style="width:100%; margin-top:10px;"></textarea>
-  <div style="display:flex; gap:10px; margin-top:15px;">
-    <button onclick="tomarFoto()" style="background:var(--accent); flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer;">Capturar</button>
-    <button onclick="cerrarCamara()" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer;">Cerrar</button>
+  <h3>Escanear Código LPN</h3>
+  <div id="lector-camara-contenedor"></div>
+  <div style="display:flex; gap:10px; margin-top:5px;">
+    <button onclick="cerrarEscaneoCamara()" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancelar</button>
   </div>
 </div></div>
 
 <div id="modalDatos" class="modal"><div class="modal-content">
   <h3>Info Pallet</h3>
-  <div class="form-group"><label>LPN</label><input type="text" id="lpn_num"></div>
+  <div class="form-group">
+    <label>LPN</label>
+    <input type="text" id="lpn_num">
+    <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara()">📷 Escanear</button>
+  </div>
   <div class="form-group"><label>SKU</label><input type="text" id="sku"></div>
   <div class="form-group"><label>Descripción</label><input type="text" id="descripcion"></div>
   <div class="form-group"><label>Cantidad</label><input type="number" id="cantidad"></div>
@@ -312,6 +313,8 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+<!-- Librería para decodificar códigos de barras y QRs en tiempo real sin internet avanzado -->
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
   const firebaseConfig = {
@@ -328,15 +331,13 @@
   const db = firebase.database();
 
   let modoAdmin = false;
-  let stream = null;
+  let html5QrcodeScanner = null;
   let abiertoId = null;
   let draggedItemIndex = null;
   let draggedFilaIdx = null;
   let draggedSourcePosIdx = null;
   let editandoContexto = { pIndex: null, nIndex: null };
   let posiciones = [];
-  
-  // Variable en memoria exclusiva para el autocompletado del Excel cargado localmente
   let baseDatosExcel = {};
 
   db.ref('patio/posiciones').on('value', (snapshot) => {
@@ -354,7 +355,7 @@
       }
   });
 
-  // Procesador local exclusivo del archivo CSV
+  // Lector local del CSV
   document.getElementById('cargar-excel-file').addEventListener('change', function(e) {
       const archivo = e.target.files[0];
       if (!archivo) return;
@@ -363,7 +364,6 @@
       lector.onload = function(evt) {
           const contenido = evt.target.result;
           const lineas = contenido.split(/\r?\n/);
-          
           if (lineas.length < 2) return;
 
           const sep = lineas[0].includes(';') ? ';' : ',';
@@ -375,7 +375,7 @@
           const idxCant = columnas.indexOf('Un Actual');
 
           if (idxLpn === -1 || idxSku === -1 || idxDesc === -1 || idxCant === -1) {
-              alert("Error: El archivo no contiene las columnas requeridas ('Número de LPN', 'SKU', 'Descripción de artículo', 'Un Actual').");
+              alert("Columnas requeridas no encontradas.");
               return;
           }
 
@@ -384,9 +384,7 @@
 
           for (let i = 1; i < lineas.length; i++) {
               if (!lineas[i].trim()) continue;
-              
               const celdas = lineas[i].split(sep).map(c => c.trim().replace(/^="?|"?$/g, '').replace(/^"|"$/g, ''));
-              
               const lpn = celdas[idxLpn];
               if (lpn) {
                   baseDatosExcel[lpn] = {
@@ -397,52 +395,75 @@
                   totalRegistros++;
               }
           }
-          document.getElementById('excel-status').innerText = `✅ ${totalRegistros} LPNs listos.`;
+          document.getElementById('excel-status').innerText = `✅ ${totalRegistros} LPNs cargados.`;
       };
       lector.readAsText(archivo, 'UTF-8');
   });
 
-  async function abrirCamara() {
+  // INICIAR EL ESCANEO DESDE LA CÁMARA TRASERA COMO PISTOLA LECTORA
+  function activarPistolaCamara() {
       document.getElementById('modalCamara').style.display = 'flex';
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      document.getElementById('video').srcObject = stream;
-  }
-
-  function cerrarCamara() {
-      if(stream) stream.getTracks().forEach(t => t.stop());
-      document.getElementById('modalCamara').style.display = 'none';
-  }
-
-  function tomarFoto() {
-      const v = document.getElementById('video');
-      const c = document.getElementById('canvas');
-      c.width = v.videoWidth; c.height = v.videoHeight;
-      c.getContext('2d').drawImage(v, 0, 0);
-      const img = c.toDataURL('image/jpeg');
-      const obs = document.getElementById('lpn-obs').value;
-      db.ref('patio/lpn_fotos').push({ img, obs, fecha: new Date().toLocaleString() });
-      cerrarCamara();
-  }
-
-  db.ref('patio/lpn_fotos').on('value', snap => {
-      const data = snap.val();
-      const cont = document.getElementById('lpn-lista');
-      cont.innerHTML = '';
-      if(data) {
-          Object.entries(data).forEach(([key, val]) => {
-              const div = document.createElement('div');
-              div.className = 'lpn-card';
-              div.innerHTML = `<img src="${val.img}"><div style="padding:10px"><small>${val.fecha}</small><p>${val.obs}</p></div>`;
-              if(modoAdmin) {
-                  const del = document.createElement('button');
-                  del.innerText = 'Eliminar';
-                  del.onclick = () => db.ref('patio/lpn_fotos/'+key).remove();
-                  div.appendChild(del);
-              }
-              cont.appendChild(div);
-          });
+      
+      if (!html5QrcodeScanner) {
+          html5QrcodeScanner = new Html5Qrcode("lector-camara-contenedor");
       }
-  });
+
+      const config = { 
+          fps: 15, 
+          qrbox: { width: 250, height: 150 }, // Caja de enfoque optimizada para códigos de barras alargados
+          aspectRatio: 1.777778 
+      };
+
+      // Inicia buscando explícitamente la cámara trasera ('environment')
+      html5QrcodeScanner.start(
+          { facingMode: "environment" }, 
+          config, 
+          onScanSuccess, 
+          onScanFailure
+      ).catch(err => {
+          alert("Error de cámara: " + err);
+          cerrarEscaneoCamara();
+      });
+  }
+
+  // ACCIÓN AL LEER UN CÓDIGO CON ÉXITO
+  function onScanSuccess(decodedText) {
+      // Intentar retroalimentación háptica (vibración) si el celular lo permite
+      if (navigator.vibrate) navigator.vibrate(100);
+
+      document.getElementById('lpn_num').value = decodedText.trim();
+      cerrarEscaneoCamara();
+      
+      // Detonar la búsqueda inmediata del registro en el Excel cargado
+      ejecutarBusquedaLpn(decodedText.trim());
+  }
+
+  function onScanFailure(error) {
+      // Silencioso para no saturar la pantalla durante el paneo
+  }
+
+  function cerrarEscaneoCamara() {
+      if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+          html5QrcodeScanner.stop().then(() => {
+              document.getElementById('modalCamara').style.display = 'none';
+          });
+      } else {
+          document.getElementById('modalCamara').style.display = 'none';
+      }
+  }
+
+  function ejecutarBusquedaLpn(lpnCodigo) {
+      const infoExcel = baseDatosExcel[lpnCodigo];
+      if (infoExcel) {
+          document.getElementById('sku').value = infoExcel.sku;
+          document.getElementById('descripcion').value = infoExcel.desc;
+          document.getElementById('cantidad').value = infoExcel.cant;
+          document.getElementById('tonalidad').focus();
+      } else {
+          alert(`Código "${lpnCodigo}" leído, pero no figura en el CSV cargado.`);
+          document.getElementById('sku').focus();
+      }
+  }
 
   function iniciarSesion() {
       const u = document.getElementById('user-in').value;
@@ -510,12 +531,9 @@
                   if (type === "fila") {
                       const fromPosIdx = draggedSourcePosIdx;
                       const fromFilaIdx = draggedFilaIdx;
-                      let sourceData;
-                      if(posiciones[fromPosIdx].tipo === 'pallet') { 
-                          sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filas[fromFilaIdx])); 
-                      } else { 
-                          sourceData = JSON.parse(JSON.stringify(posiciones[fromPosIdx].filasObjeto[fromFilaIdx])); 
-                      }
+                      let sourceData = posiciones[fromPosIdx].tipo === 'pallet' ? 
+                          JSON.parse(JSON.stringify(posiciones[fromPosIdx].filas[fromFilaIdx])) : 
+                          JSON.parse(JSON.stringify(posiciones[fromPosIdx].filasObjeto[fromFilaIdx]));
 
                       if(sourceData.sku || sourceData.tipo) {
                           if(pos.tipo === 'pallet') {
@@ -636,29 +654,10 @@
       document.getElementById('modalDatos').style.display = 'flex';
 
       const inputLPN = document.getElementById('lpn_num');
-      inputLPN.onkeydown = null; // Limpiar listeners previos
-      
-      // Auto-enfocar para pistolear de inmediato
-      setTimeout(() => inputLPN.focus(), 150);
-
-      // Listener para capturar el Enter automático del escáner
       inputLPN.onkeydown = function(e) {
           if (e.key === 'Enter') {
-              e.preventDefault(); 
-              const lpnPistoleado = this.value.trim();
-              
-              const infoExcel = baseDatosExcel[lpnPistoleado];
-              
-              if (infoExcel) {
-                  document.getElementById('sku').value = infoExcel.sku;
-                  document.getElementById('descripcion').value = infoExcel.desc;
-                  document.getElementById('cantidad').value = infoExcel.cant;
-                  // Pasa al cuadro manual de Tonalidad automáticamente
-                  document.getElementById('tonalidad').focus();
-              } else {
-                  alert("LPN no encontrado en el Excel. Puedes ingresar la información de forma manual.");
-                  document.getElementById('sku').focus();
-              }
+              e.preventDefault();
+              ejecutarBusquedaLpn(this.value.trim());
           }
       };
   }
