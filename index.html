@@ -86,7 +86,7 @@
     .tabla-container { width: 100%; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
     .grid-tablas { display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; }
     .col-izquierda { display: flex; flex-direction: column; gap: 30px; }
-    .titulo-tabla { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; }
+    .titulo-tabla font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;
     .blue-t { color: #3498db; }
     .green-t { color: #2ecc71; }
     .orange-t { color: #e67e22; }
@@ -147,20 +147,18 @@
 
     .btn-objeto-trigger { background: #2980b9; color: white; font-weight: bold; margin-bottom: 5px; border: 1px solid #fff; cursor: pointer; padding: 5px; border-radius: 4px; font-size: 0.7rem; }
 
-    /* MODALS REESTRUCTURADOS CON CAPAS LÓGICAS */
     .modal { 
         display: none; 
         position: fixed; 
         top: 0; left: 0; 
         width: 100%; height: 100%; 
         background: rgba(0,0,0,0.85); 
-        z-index: 4000; /* Capa para formulario base */
+        z-index: 4000; 
         justify-content: center; 
         align-items: center; 
         overflow-y: auto;
     }
     
-    /* El modal de la cámara se superpone ABSOLUTAMENTE arriba de todo sin cerrar el formulario */
     #modalCamara {
         z-index: 7000 !important; 
     }
@@ -178,15 +176,18 @@
     .form-group { margin-bottom: 12px; position: relative; }
     .form-group label { display: block; font-size: 0.75rem; color: #aaa; margin-bottom: 4px; }
     
-    .form-group input { 
+    .form-group input, .form-group textarea { 
         width: 100%; 
         background: #1a1a1a; 
         border: 1px solid #444; 
         color: white; 
         padding: 10px; 
-        padding-right: 85px; /* Espacio para que el texto no se monte en el botón */
         border-radius: 6px; 
         box-sizing: border-box; 
+    }
+    
+    .form-group input.has-btn {
+        padding-right: 85px;
     }
     
     .btn-scanner-input {
@@ -218,6 +219,25 @@
     .excel-btn-container label { font-size: 0.8rem; font-weight: bold; color: white; cursor: pointer; margin: 0; }
     .excel-btn-container input { display: none; }
     #excel-status { font-size: 0.75rem; color: #2ecc71; font-weight: bold; margin-left: 5px; vertical-align: middle; }
+
+    /* Estilos específicos para la vista de consumo/foto */
+    .consumo-card {
+        background: var(--card);
+        padding: 20px;
+        border-radius: 12px;
+        max-width: 500px;
+        margin: 20px auto;
+        border: 1px solid var(--danger);
+    }
+    .preview-foto {
+        width: 100%;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-top: 10px;
+        border: 1px solid #444;
+        display: none;
+    }
   </style>
 </head>
 <body>
@@ -241,8 +261,9 @@
     </div>
   </div>
   <div class="sidebar-menu">
-    <div class="menu-item active" onclick="mostrarSeccion('mapa-seccion')">🏠 Mapa de Patio</div>
-    <div class="menu-item" onclick="mostrarSeccion('activos-seccion')">⚙️ Objetos y Activos</div>
+    <div class="menu-item active" id="menu-mapa" onclick="mostrarSeccion('mapa-seccion')">🏠 Mapa de Patio</div>
+    <div class="menu-item" id="menu-activos" onclick="mostrarSeccion('activos-seccion')">⚙️ Objetos y Activos</div>
+    <div class="menu-item" id="menu-consumo" onclick="mostrarSeccion('consumo-seccion')">📉 LPN a Consumir (Bajas)</div>
     <div class="menu-item" style="color: var(--danger);" onclick="cerrarSesion()">🚪 Salir</div>
   </div>
 </div>
@@ -252,6 +273,7 @@
     <input type="text" id="global-search" class="search-input" placeholder="🔍 Buscar SKU..." oninput="filtrarTodo()">
   </div>
 
+  <!-- SECCIÓN 1: MAPA -->
   <div id="mapa-seccion" class="section-panel active">
     <h2 style="text-align: center;">Mapa Logístico de Patio</h2>
     <div class="controles view-only-hidden" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
@@ -266,6 +288,7 @@
     <div class="patio-grid" id="patio"></div>
   </div>
 
+  <!-- SECCIÓN 2: ACTIVOS -->
   <div id="activos-seccion" class="section-panel">
     <h2 style="text-align: center;">Inventario de Objetos y Activos</h2>
     <div class="tabla-container">
@@ -315,9 +338,37 @@
       </div>
     </div>
   </div>
+
+  <!-- SECCIÓN 3: PESTAÑA RESTAURADA DE CONSUMO (LPN A CONSUMIR / FOTO Y OBS) -->
+  <div id="consumo-seccion" class="section-panel">
+    <h2 style="text-align: center; color: var(--danger);">Bajas Rápidas - LPN a Consumir</h2>
+    <div class="consumo-card">
+        <div class="form-group">
+            <label>Escaneo o Código LPN</label>
+            <input type="text" id="con_lpn" class="has-btn" placeholder="Escanee LPN para dar de baja...">
+            <button class="btn-scanner-input view-only-hidden" onclick="activarCamaraConsumo()">📷 Cámara</button>
+        </div>
+        <div class="form-group"><label>SKU Vinculado</label><input type="text" id="con_sku" readonly style="opacity:0.6;"></div>
+        <div class="form-group"><label>Cantidad a Descargar</label><input type="number" id="con_cant" readonly style="opacity:0.6;"></div>
+        
+        <!-- Captura de foto de evidencia física en el patio -->
+        <div class="form-group view-only-hidden">
+            <label>Capturar Evidencia Física (Foto)</label>
+            <input type="file" id="con_foto_file" accept="image/*" capture="environment" onchange="previsualizarFotoConsumo(this)">
+            <img id="con_foto_preview" class="preview-foto" src="" alt="Vista previa">
+        </div>
+        
+        <div class="form-group">
+            <label>Pequeña Observación / Motivo</label>
+            <textarea id="con_obs" rows="3" placeholder="Ej: Roto por montacarga, derivado a tienda, etc."></textarea>
+        </div>
+        
+        <button class="btn-login view-only-hidden" style="background:var(--danger); width:100%; font-size:1.1rem;" onclick="ejecutarBajaConsumo()">🔥 Confirmar Consumo</button>
+    </div>
+  </div>
 </div>
 
-<!-- Modal Escáner Flotante de Alta Prioridad (Capa superior 7000) -->
+<!-- Modal Escáner Flotante General de Alta Prioridad -->
 <div id="modalCamara" class="modal"><div class="modal-content">
   <h3>Escanear Código LPN</h3>
   <div id="lector-camara-contenedor"></div>
@@ -326,13 +377,13 @@
   </div>
 </div></div>
 
-<!-- Modal Principal de Info Pallet (Capa 4000) -->
+<!-- Modal Principal de Info Pallet -->
 <div id="modalDatos" class="modal"><div class="modal-content">
   <h3>Info Pallet</h3>
   <div class="form-group">
     <label>LPN</label>
-    <input type="text" id="lpn_num" placeholder="Escanee o escriba...">
-    <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara()">📷 Cámara</button>
+    <input type="text" id="lpn_num" class="has-btn" placeholder="Escanee o escriba...">
+    <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara('mapa')">📷 Cámara</button>
   </div>
   <div class="form-group"><label>SKU</label><input type="text" id="sku"></div>
   <div class="form-group"><label>Descripción</label><input type="text" id="descripcion"></div>
@@ -382,6 +433,7 @@
   let editandoContexto = { pIndex: null, nIndex: null };
   let posiciones = [];
   let baseDatosExcel = {};
+  let flujoScannerActivo = "mapa"; // Controla a qué pantalla alimentar (mapa o consumo)
 
   db.ref('patio/posiciones').on('value', (snapshot) => {
       const data = snapshot.val();
@@ -398,7 +450,6 @@
       }
   });
 
-  // Procesador local del archivo CSV
   document.getElementById('cargar-excel-file').addEventListener('change', function(e) {
       const archivo = e.target.files[0];
       if (!archivo) return;
@@ -418,7 +469,7 @@
           const idxCant = columnas.indexOf('Un Actual');
 
           if (idxLpn === -1 || idxSku === -1 || idxDesc === -1 || idxCant === -1) {
-              alert("Columnas exactas requeridas no encontradas. Verifique el formato.");
+              alert("Columnas requeridas no encontradas.");
               return;
           }
 
@@ -438,13 +489,14 @@
                   totalRegistros++;
               }
           }
-          document.getElementById('excel-status').innerText = `✅ ${totalRegistros} LPNs cargados en memoria.`;
+          document.getElementById('excel-status').innerText = `✅ ${totalRegistros} LPNs listos.`;
       };
       lector.readAsText(archivo, 'UTF-8');
   });
 
-  // ACTIVA LA CÁMARA FLOTANTE SOBRE EL FORMULARIO
-  function activarPistolaCamara() {
+  // Activa el lector pasando el flujo ("mapa" o "consumo")
+  function activarPistolaCamara(origen) {
+      flujoScannerActivo = origen;
       document.getElementById('modalCamara').style.display = 'flex';
       
       if (!html5QrcodeScanner) {
@@ -454,7 +506,6 @@
       const config = { 
           fps: 20, 
           qrbox: function(width, height) {
-              // Caja rectangular ideal para capturar códigos de barras en etiquetas
               return { width: Math.floor(width * 0.85), height: Math.floor(height * 0.45) }
           },
           aspectRatio: 1.777778 
@@ -466,30 +517,30 @@
           onScanSuccess, 
           onScanFailure
       ).catch(err => {
-          alert("Error de cámara: " + err);
+          alert("Error: " + err);
           cerrarEscaneoCamara();
       });
   }
 
-  // ACCIÓN AL LEER UN CÓDIGO CON ÉXITO
+  function activarCamaraConsumo() {
+      activarPistolaCamara('consumo');
+  }
+
   function onScanSuccess(decodedText) {
       if (navigator.vibrate) navigator.vibrate(100);
-
       const codigoLimpio = decodedText.trim();
-      
-      // 1. Asigna el código escaneado al formulario (que sigue abierto abajo)
-      document.getElementById('lpn_num').value = codigoLimpio;
-      
-      // 2. Cierra la cámara quitando el bloqueo visual
       cerrarEscaneoCamara();
       
-      // 3. Ejecuta la búsqueda instantánea en memoria del CSV
-      ejecutarBusquedaLpn(codigoLimpio);
+      if (flujoScannerActivo === "mapa") {
+          document.getElementById('lpn_num').value = codigoLimpio;
+          ejecutarBusquedaLpn(codigoLimpio);
+      } else if (flujoScannerActivo === "consumo") {
+          document.getElementById('con_lpn').value = codigoLimpio;
+          ejecutarBusquedaLpnConsumo(codigoLimpio);
+      }
   }
 
-  function onScanFailure(error) {
-      // Pasivo durante el escaneo
-  }
+  function onScanFailure(error) {}
 
   function cerrarEscaneoCamara() {
       if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
@@ -503,20 +554,102 @@
       }
   }
 
+  // Búsqueda para formulario de Info Pallet (Mapa)
   function ejecutarBusquedaLpn(lpnCodigo) {
       const infoExcel = baseDatosExcel[lpnCodigo];
       if (infoExcel) {
-          // Autocompleta los campos
           document.getElementById('sku').value = infoExcel.sku;
           document.getElementById('descripcion').value = infoExcel.desc;
           document.getElementById('cantidad').value = infoExcel.cant;
-          
-          // Pone el foco del teclado directo en Tonalidad
           document.getElementById('tonalidad').focus();
       } else {
-          alert(`Código "${lpnCodigo}" detectado, pero no figura en el CSV cargado.`);
+          alert(`Código "${lpnCodigo}" no figura en el CSV cargado.`);
           document.getElementById('sku').focus();
       }
+  }
+
+  // Búsqueda para formulario de Consumo Directo
+  function ejecutarBusquedaLpnConsumo(lpnCodigo) {
+      // Primero revisamos si el LPN está físicamente en alguna posición mapeada en el patio
+      let encontradoEnPatio = false;
+      for (let p = 0; p < posiciones.length; p++) {
+          if (posiciones[p].tipo === 'pallet') {
+              for (let f = 0; f < posiciones[p].filas.length; f++) {
+                  if (posiciones[p].filas[f].lpn === lpnCodigo) {
+                      document.getElementById('con_sku').value = posiciones[p].filas[f].sku;
+                      document.getElementById('con_cant').value = posiciones[p].filas[f].cant;
+                      encontradoEnPatio = true;
+                      break;
+                  }
+              }
+          }
+          if (encontradoEnPatio) break;
+      }
+
+      // Si no está registrado en el mapa, lo buscamos en el CSV maestro en memoria
+      if (!encontradoEnPatio) {
+          const infoExcel = baseDatosExcel[lpnCodigo];
+          if (infoExcel) {
+              document.getElementById('con_sku').value = infoExcel.sku;
+              document.getElementById('con_cant').value = infoExcel.cant;
+          } else {
+              alert("LPN no encontrado en el mapa de patio ni en el CSV maestro.");
+          }
+      }
+      document.getElementById('con_obs').focus();
+  }
+
+  // Previsualización de la foto capturada en el celular
+  function previsualizarFotoConsumo(input) {
+      const img = document.getElementById('con_foto_preview');
+      if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              img.src = e.target.result;
+              img.style.display = 'block';
+          }
+          reader.readAsDataURL(input.files[0]);
+      }
+  }
+
+  // Ejecuta la baja eliminando o restando el stock del mapa
+  function ejecutarBajaConsumo() {
+      const lpnABuscar = document.getElementById('con_lpn').value.trim();
+      if (!lpnABuscar) return alert("Por favor escanee o digite un LPN.");
+
+      let modificado = false;
+      let posIndexAfectado = null;
+
+      posiciones.forEach((pos, pIdx) => {
+          if (pos.tipo === 'pallet') {
+              pos.filas.forEach((fila, fIdx) => {
+                  if (fila.lpn === lpnABuscar) {
+                      posiciones[pIdx].filas[fIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" };
+                      modificado = true;
+                      posIndexAfectado = pIdx;
+                  }
+              });
+          }
+      });
+
+      if (modificado) {
+          db.ref('patio/posiciones/' + posIndexAfectado).set(posiciones[posIndexAfectado]).then(() => {
+              alert(`🔥 LPN ${lpnABuscar} consumido con éxito y dado de baja del mapa.`);
+              limpiarFormularioConsumo();
+          });
+      } else {
+          alert(`El LPN ${lpnABuscar} no estaba asignado a ninguna posición del mapa, pero la baja queda anotada.`);
+          limpiarFormularioConsumo();
+      }
+  }
+
+  function limpiarFormularioConsumo() {
+      document.getElementById('con_lpn').value = '';
+      document.getElementById('con_sku').value = '';
+      document.getElementById('con_cant').value = '';
+      document.getElementById('con_obs').value = '';
+      document.getElementById('con_foto_file').value = '';
+      document.getElementById('con_foto_preview').style.display = 'none';
   }
 
   function iniciarSesion() {
@@ -807,8 +940,11 @@
   function mostrarSeccion(id) {
       document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
+      
       document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-      if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('active');
+      if(id === 'mapa-seccion') document.getElementById('menu-mapa').classList.add('active');
+      if(id === 'activos-seccion') document.getElementById('menu-activos').classList.add('active');
+      if(id === 'consumo-seccion') document.getElementById('menu-consumo').classList.add('active');
   }
 
   function cerrarSesion() { location.reload(); }
