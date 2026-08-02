@@ -56,6 +56,7 @@
     .view-only-hidden { display: block; }
     body.viewer-mode .view-only-hidden { display: none !important; }
     body.viewer-mode .posicion { cursor: default !important; }
+    body.viewer-mode .btn-objeto-trigger { display: none !important; }
 
     .sidebar {
         width: 260px;
@@ -88,18 +89,22 @@
     .titulo-tabla { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; }
     .blue-t { color: #3498db; }
     .green-t { color: #2ecc71; }
+    .orange-t { color: #e67e22; }
 
     .tabla-estilizada { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     .tabla-estilizada th { background: #111; color: #3498db; text-align: left; padding: 12px; border-bottom: 2px solid #444; }
     .tabla-estilizada td { padding: 12px; border-bottom: 1px solid #333; }
     .total-val { font-weight: bold; text-align: right; }
 
-    .patio-grid { display: grid; grid-template-columns: repeat(15, 60px); grid-auto-rows: 60px; gap: 10px; justify-content: center; margin-top: 30px; }
+    .patio-grid { display: grid; grid-template-columns: repeat(15, 60px); grid-auto-rows: 60px; gap: 10px; justify-content: center; margin-top: 50px; }
     .posicion {
         background: var(--card); width: 60px; height: 60px; border-radius: 8px; border: 2px solid #444;
         display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; cursor: pointer;
+        transition: background 0.3s;
     }
-    
+    .posicion.drag-over { border: 2px dashed var(--accent); background: rgba(52, 152, 219, 0.1); }
+    .posicion.es-objeto { background: var(--objeto) !important; border-color: #bdc3c7; }
+
     .encontrado { animation: parpadeo-busqueda 1s infinite; z-index: 10; }
     @keyframes parpadeo-busqueda {
         0% { background: var(--card); border-color: var(--accent); }
@@ -110,26 +115,37 @@
     .search-container { display: flex; justify-content: center; margin-bottom: 20px; }
     .search-input { width: 300px; padding: 10px; border-radius: 20px; border: 1px solid var(--accent); background: #111; color: white; padding-left: 15px; }
 
+    .btn-cerrar {
+        position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border-radius: 50%;
+        width: 22px; height: 22px; font-size: 12px; display: none; justify-content: center; align-items: center; border: 2px solid #fff; z-index: 150;
+    }
+    .posicion:hover .btn-cerrar { display: flex; }
+
     .obstaculo {
         grid-column: 12; grid-row: 1 / span 4; background: var(--obstacle); border: 3px solid #222; border-radius: 4px;
         display: flex; justify-content: center; align-items: center; font-weight: bold; color: #888; font-size: 0.6rem; text-align: center;
     }
     .posicion.abierto { border-color: var(--accent); z-index: 1500; }
+    .posicion.abierto .detalle-pila { display: flex; }
     .nivel-badge { font-size: 1.2rem; font-weight: bold; color: var(--accent); pointer-events: none; }
     .id-piso { font-size: 0.6rem; opacity: 0.7; position: absolute; top: 2px; left: 2px; pointer-events: none; }
+    .icon-objeto { font-size: 1.2rem; display: none; }
+    .posicion.es-objeto .icon-objeto { display: block; }
+    .posicion.es-objeto .nivel-badge { display: none; }
 
     .detalle-pila {
         display: none; position: absolute; bottom: 115%; left: -50px; width: 170px; background: #333;
         border-radius: 8px; padding: 10px; z-index: 2500; border: 1px solid var(--accent); flex-direction: column-reverse; gap: 5px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
-    .posicion.abierto .detalle-pila { display: flex; }
-    
     .fila-btn {
         background: #444; border: 1px solid #555; color: white; padding: 5px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;
-        text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative;
     }
     .fila-btn.con-datos { border-left: 4px solid var(--pallet); }
+    .fila-btn.objeto-datos { border-left: 4px solid #333; background: #666; }
+
+    .btn-objeto-trigger { background: #2980b9; color: white; font-weight: bold; margin-bottom: 5px; border: 1px solid #fff; cursor: pointer; padding: 5px; border-radius: 4px; font-size: 0.7rem; }
 
     .modal { 
         display: none; 
@@ -140,58 +156,137 @@
         z-index: 4000; 
         justify-content: center; 
         align-items: center; 
+        overflow-y: auto;
     }
+    
+    #modalCamara { z-index: 7000 !important; }
+
     .modal-content { 
         background: #2d2d2d; 
         padding: 20px; 
         border-radius: 12px; 
         width: 90%;
-        max-width: 450px; 
+        max-width: 360px; 
         border: 1px solid var(--accent); 
         box-sizing: border-box; 
     }
     
     .form-group { margin-bottom: 12px; position: relative; }
     .form-group label { display: block; font-size: 0.75rem; color: #aaa; margin-bottom: 4px; }
-    .form-group input { 
-        width: 100%; background: #1a1a1a; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; box-sizing: border-box; 
+    
+    .form-group input, .form-group textarea { 
+        width: 100%; 
+        background: #1a1a1a; 
+        border: 1px solid #444; 
+        color: white; 
+        padding: 10px; 
+        border-radius: 6px; 
+        box-sizing: border-box; 
+    }
+    
+    .form-group input.has-btn { padding-right: 85px; }
+    
+    .btn-scanner-input {
+        position: absolute; 
+        right: 4px; 
+        top: 20px; 
+        background: var(--accent); 
+        border: none; 
+        color: white;
+        padding: 6px 10px; 
+        border-radius: 4px; 
+        font-size: 0.75rem; 
+        cursor: pointer; 
+        font-weight: bold;
+        z-index: 10;
     }
 
-    /* Estilos del Contenedor de Gestión Excel */
-    .excel-actions-bar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        background: #252525;
-        padding: 10px 15px;
-        border-radius: 8px;
-        border: 1px solid #383838;
-        flex-wrap: wrap;
+    #lector-camara-contenedor { 
+        width: 100%; 
+        height: 250px; 
+        background: #111; 
+        border-radius: 8px; 
+        overflow: hidden; 
+        margin-bottom: 15px; 
+        border: 2px dashed var(--accent); 
     }
-    .excel-btn-cargar { display: inline-flex; align-items: center; background: #27ae60; padding: 8px 15px; border-radius: 6px; border: 1px solid #2ecc71; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
-    .excel-btn-cargar input { display: none; }
-    .btn-danger-custom { background: var(--danger); border: none; padding: 8px 15px; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
-    .btn-success-custom { background: #2980b9; border: none; padding: 8px 15px; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
-    #excel-status { font-size: 0.85rem; color: #2ecc71; font-weight: bold; }
 
-    /* Lista del modal de barrido */
-    .lista-barrido-faltantes {
-        max-height: 300px;
-        overflow-y: auto;
-        background: #1a1a1a;
-        padding: 10px;
+    .excel-btn-container { display: inline-flex; align-items: center; background: #27ae60; padding: 8px 15px; border-radius: 6px; border: 1px solid #2ecc71; margin-left: 10px; gap: 8px; vertical-align: middle; }
+    .excel-btn-container label { font-size: 0.8rem; font-weight: bold; color: white; cursor: pointer; margin: 0; }
+    .excel-btn-container input { display: none; }
+    #excel-status { font-size: 0.75rem; color: #2ecc71; font-weight: bold; margin-left: 5px; vertical-align: middle; }
+
+    /* Estilos Avanzados de la Sección de Consumo */
+    .consumo-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 20px;
+        max-width: 1000px;
+        margin: 20px auto;
+    }
+    .consumo-card {
+        background: var(--card);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--danger);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        height: fit-content;
+    }
+    .historial-card {
+        background: var(--card);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--accent);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .preview-foto {
+        width: 100%;
+        max-height: 180px;
+        object-fit: cover;
         border-radius: 6px;
-        border: 1px solid #444;
         margin-top: 10px;
-        font-family: monospace;
-        font-size: 0.85rem;
+        border: 1px solid #444;
+        display: none;
     }
-    .item-faltante {
-        padding: 6px 4px;
-        border-bottom: 1px solid #333;
-        color: #e74c3c;
+    .btn-foto-disparador {
+        display: block;
+        width: 100%;
+        background: #34495e;
+        color: white;
+        padding: 12px;
+        text-align: center;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        border: 1px dashed var(--accent);
+    }
+    .lista-bajas {
+        max-height: 500px;
+        overflow-y: auto;
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .item-baja {
+        background: #1e1e1e;
+        border-left: 4px solid var(--danger);
+        padding: 12px;
+        border-radius: 6px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+    .item-baja-info { flex: 1; font-size: 0.85rem; }
+    .item-baja-info strong { color: var(--accent); }
+    .item-baja-img {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #444;
+        background: #333;
+        cursor: pointer;
     }
   </style>
 </head>
@@ -218,6 +313,7 @@
   <div class="sidebar-menu">
     <div class="menu-item active" id="menu-mapa" onclick="mostrarSeccion('mapa-seccion')">🏠 Mapa de Patio</div>
     <div class="menu-item" id="menu-activos" onclick="mostrarSeccion('activos-seccion')">⚙️ Objetos y Activos</div>
+    <div class="menu-item" id="menu-consumo" onclick="mostrarSeccion('menu-consumo')">📉 LPN a Consumir</div>
     <div class="menu-item" style="color: var(--danger);" onclick="cerrarSesion()">🚪 Salir</div>
   </div>
 </div>
@@ -229,19 +325,15 @@
 
   <!-- SECCIÓN 1: MAPA -->
   <div id="mapa-seccion" class="section-panel active">
-    <h2 style="text-align: center; margin-top: 0;">Mapa Logístico de Patio</h2>
-    
-    <!-- Barra Dinámica de Gestión de Excel Persistente -->
-    <div class="excel-actions-bar view-only-hidden">
-        <label class="excel-btn-cargar">
-            📊 Cargar Nuevo Excel (.csv)
-            <input type="file" id="cargar-excel-file" accept=".csv">
-        </label>
-        <button class="btn-danger-custom" onclick="eliminarBaseDatosExcel()">🗑️ Eliminar Base de Datos / Hacer Barrido</button>
-        <button class="btn-success-custom" onclick="confirmarBarridoFaltantes()">🔍 Confirmar Barrido (Auditar Faltantes)</button>
-        <span id="excel-status">Cargando base de datos...</span>
+    <h2 style="text-align: center;">Mapa Logístico de Patio</h2>
+    <div class="controles view-only-hidden" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+      <button class="btn-login" style="width:auto; margin-top:0; padding:10px 20px;" onclick="agregarPosicion()">+ Añadir Espacio</button>
+      <div class="excel-btn-container">
+          <label for="cargar-excel-file">📊 Cargar Excel (.csv)</label>
+          <input type="file" id="cargar-excel-file" accept=".csv">
+      </div>
+      <span id="excel-status"></span>
     </div>
-
     <div class="patio-grid" id="patio"></div>
   </div>
 
@@ -274,7 +366,7 @@
           <div class="titulo-tabla blue-t">Detalle de Ubicaciones</div>
           <div style="max-height: 700px; overflow-y: auto; border: 1px solid #333; border-radius: 8px;">
             <table class="tabla-estilizada">
-              <thead><tr><th>Ubicación</th><th>SKU</th><th>Tono</th><th>Cant.</th><th>LPN</th></tr></thead>
+              <thead><tr><th>Ubicación</th><th>SKU / Objeto</th><th>Tono</th><th>Cant.</th><th>LPN</th></tr></thead>
               <tbody id="cuerpo-detalle"><tr><td colspan="5" style="text-align:center; color:#888;">No hay activos registrados</td></tr></tbody>
             </table>
           </div>
@@ -282,15 +374,71 @@
       </div>
     </div>
   </div>
+
+  <!-- SECCIÓN 3: CONSUMO + HISTORIAL VINCULADO CON FOTO -->
+  <div id="consumo-seccion" class="section-panel">
+    <h2 style="text-align: center; color: var(--danger);">Bajas Rápidas y Consumo de Patio</h2>
+    
+    <div class="consumo-wrapper">
+        <!-- Formulario Inteligente Completo -->
+        <div class="consumo-card">
+            <div class="form-group">
+                <label>Código o LPN a dar de baja</label>
+                <input type="text" id="con_lpn" placeholder="Escanee o escriba el LPN..." oninput="autoBuscarLpnEnPatio(this.value)">
+            </div>
+            <div class="form-group">
+                <label>SKU Vinculado (Lectura)</label>
+                <input type="text" id="con_sku" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
+            </div>
+            <div class="form-group">
+                <label>Cantidad Actual (Lectura)</label>
+                <input type="text" id="con_cant" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
+            </div>
+            <div class="form-group">
+                <label>Ubicación Actual (Lectura)</label>
+                <input type="text" id="con_ubicacion" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
+            </div>
+
+            <!-- Botón de Foto -->
+            <div class="form-group view-only-hidden">
+                <label>Evidencia Física (Foto Obligatoria)</label>
+                <label for="con_foto_file" class="btn-foto-disparador">📷 Capturar Evidencia / Tomar Foto</label>
+                <input type="file" id="con_foto_file" accept="image/*" capture="environment" onchange="previsualizarFotoConsumo(this)" style="display:none;">
+                <img id="con_foto_preview" class="preview-foto" src="" alt="Vista previa">
+            </div>
+            
+            <div class="form-group">
+                <label>Observación del Consumo</label>
+                <textarea id="con_obs" rows="3" placeholder="Detalle el motivo del consumo..."></textarea>
+            </div>
+            
+            <button class="btn-login view-only-hidden" style="background:var(--danger); width:100%; font-size:1.1rem; margin-top:15px;" onclick="ejecutarBajaConsumo()">🔥 Confirmar y Guardar Transacción</button>
+        </div>
+
+        <!-- Panel del Historial con Fotos Guardadas -->
+        <div class="historial-card">
+            <h3 style="margin-top:0; color:var(--accent);">📋 Registro de LPNs Consumidos</h3>
+            <div class="lista-bajas" id="registro-bajas-lista">
+                <div style="text-align:center; color:#888; padding-top:20px;">Cargando historial de consumos...</div>
+            </div>
+        </div>
+    </div>
+  </div>
 </div>
 
-<!-- Modal Principal del Formulario del Casillero -->
+<!-- Modales -->
+<div id="modalCamara" class="modal"><div class="modal-content">
+  <h3>Escanear Código LPN</h3>
+  <div id="lector-camara-contenedor"></div>
+  <button onclick="cerrarEscaneoCamara()" style="background:#555; width:100%; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancelar</button>
+</div></div>
+
 <div id="modalDatos" class="modal"><div class="modal-content">
   <h3>Info Pallet</h3>
   <div class="form-group">
     <label>LPN</label>
-    <input type="text" id="lpn_num" oninput="buscarLpnEnExcelPersistente(this.value)">
-    <small style="color:var(--accent); display:block; margin-top:2px;">Al escribirlo o pistolearlo se extraerán los datos del Excel guardado.</small>
+    <input type="text" id="lpn_num" class="has-btn">
+    <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara('mapa')">📷 Cámara</button>
   </div>
   <div class="form-group"><label>SKU</label><input type="text" id="sku"></div>
   <div class="form-group"><label>Descripción</label><input type="text" id="descripcion"></div>
@@ -298,27 +446,29 @@
   <div class="form-group"><label>Tonalidad</label><input type="text" id="tonalidad"></div>
   <div class="form-group"><label>Observación</label><input type="text" id="observacion"></div>
   <div style="display:flex; gap:10px; margin-top:15px;">
-    <button onclick="guardarDatos()" style="background:var(--accent); flex:1; border:none; color:white; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">Guardar en Patio</button>
-    <button onclick="cerrarModal('modalDatos')" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer;">Cerrar</button>
+    <button onclick="guardarDatos()" style="background:var(--accent); flex:1; border:none; color:white; padding:10px; border-radius:6px; font-weight:bold;">Guardar</button>
+    <button onclick="cerrarModal('modalDatos')" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px;">Cerrar</button>
   </div>
 </div></div>
 
-<!-- Modal Especial: Reporte de Barrido de LPNs Faltantes -->
-<div id="modalBarrido" class="modal"><div class="modal-content" style="max-width:550px;">
-  <h3 style="color:var(--danger); margin-top:0;">⚠️ LPNs Faltantes (No Pistoleados en Patio)</h3>
-  <p style="font-size:0.85rem; color:#ccc;">Los siguientes LPNs se encuentran en el listado del Excel Maestro, pero **NO** han sido asignados a ninguna posición física del mapa.</p>
-  
-  <div class="lista-barrido-faltantes" id="contenedor-faltantes-barrido">
-      <!-- Inyección dinámica -->
-  </div>
-  
-  <div style="margin-top:20px; text-align:right;">
-      <button onclick="cerrarModal('modalBarrido')" style="background:var(--accent); border:none; color:white; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">Entendido</button>
+<div id="modalObjeto" class="modal"><div class="modal-content">
+  <h3>Registrar Objeto</h3>
+  <div class="form-group"><label>Tipo</label><input type="text" id="objTipo"></div>
+  <div class="form-group"><label>Cantidad</label><input type="number" id="objCant"></div>
+  <div style="display:flex; gap:10px; margin-top:15px;">
+    <button onclick="guardarObjeto()" style="background:var(--objeto); flex:1; border:none; color:white; padding:10px; border-radius:6px;">Guardar</button>
+    <button onclick="cerrarModal('modalObjeto')" style="background:#555; flex:1; border:none; color:white; padding:10px; border-radius:6px;">X</button>
   </div>
 </div></div>
+
+<!-- Modal para Ampliar la Foto Guardada -->
+<div id="modalFotoGrande" class="modal" onclick="cerrarModal('modalFotoGrande')">
+    <img id="img-ampliada" src="" style="max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 5px 25px rgba(0,0,0,0.8);">
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
   const firebaseConfig = {
@@ -335,235 +485,165 @@
   const db = firebase.database();
 
   let modoAdmin = false;
+  let html5QrcodeScanner = null;
   let abiertoId = null;
   let posiciones = [];
-  let baseDatosExcel = {}; // Se sincronizará con Firebase
-  let editandoContexto = null;
+  let baseDatosExcel = {};
+  let fotoBase64Global = ""; 
 
-  // 1. Escuchar Ubicaciones del Patio Físico en tiempo real
+  // Escuchar Cambios en Posiciones
   db.ref('patio/posiciones').on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) { posiciones = data; renderPatio(); }
   });
 
-  // 2. Escuchar y Mantener la Base de Datos del Excel en Firebase (Persistente)
-  db.ref('patio/excel_maestro').on('value', (snapshot) => {
-      baseDatosExcel = snapshot.val() || {};
-      const count = Object.keys(baseDatosExcel).length;
-      const statusEl = document.getElementById('excel-status');
-      if(count > 0) {
-          statusEl.innerText = `✅ Base de Datos activa: ${count} LPNs cargados.`;
-          statusEl.style.color = "#2ecc71";
-      } else {
-          statusEl.innerText = `❌ Sin Excel en línea. Cargue uno para trabajar.`;
-          statusEl.style.color = "#e74c3c";
+  // Escuchar Cambios en el Historial de Bajas / Consumos
+  db.ref('patio/historial_bajas').on('value', (snapshot) => {
+      const listaContenedor = document.getElementById('registro-bajas-lista');
+      listaContenedor.innerHTML = "";
+      const data = snapshot.val();
+      
+      if (!data) {
+          listaContenedor.innerHTML = `<div style="text-align:center; color:#888; padding-top:20px;">No hay registros de consumos previos.</div>`;
+          return;
       }
+
+      Object.values(data).reverse().forEach(item => {
+          const div = document.createElement('div');
+          div.className = "item-baja";
+          
+          let imgTag = item.foto ? `<img src="${item.foto}" class="item-baja-img" onclick="ampliarImagen('${item.foto}')">` : `<div class="item-baja-img" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🚫</div>`;
+          
+          div.innerHTML = `
+              ${imgTag}
+              <div class="item-baja-info">
+                  <div><strong>LPN:</strong> ${item.lpn} | <strong>SKU:</strong> ${item.sku}</div>
+                  <div><strong>Cant:</strong> ${item.cant} uds. | <strong>Ubicación:</strong> ${item.ubicacion}</div>
+                  <div style="color:#aaa; font-size:0.75rem; margin-top:3px;"><strong>Obs:</strong> ${item.observacion || 'Sin observaciones'}</div>
+              </div>
+          `;
+          listaContenedor.appendChild(div);
+      });
   });
 
-  // Procesar y Guardar el archivo Excel (CSV) directo a Firebase
-  document.getElementById('cargar-excel-file').addEventListener('change', function(e) {
-      const archivo = e.target.files[0];
-      if (!archivo) return;
-      
-      document.getElementById('excel-status').innerText = "Subiendo y procesando...";
-      
-      const lector = new FileReader();
-      lector.onload = function(evt) {
-          const contenido = evt.target.result;
-          const lineas = contenido.split(/\r?\n/);
-          if (lineas.length < 2) return alert("El archivo está vacío o no es válido.");
-          
-          const sep = lineas[0].includes(';') ? ';' : ',';
-          const columnas = lineas[0].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
-          
-          const idxLpn = columnas.indexOf('Número de LPN');
-          const idxSku = columnas.indexOf('SKU');
-          const idxDesc = columnas.indexOf('Descripción de artículo');
-          const idxCant = columnas.indexOf('Un Actual');
+  function autoBuscarLpnEnPatio(valorLpn) {
+      const lpnLimpio = valorLpn.trim();
+      if(!lpnLimpio) { limpiarCamposLectura(); return; }
 
-          if (idxLpn === -1 || idxSku === -1 || idxDesc === -1 || idxCant === -1) {
-              document.getElementById('excel-status').innerText = "❌ Columnas incorrectas.";
-              return alert("Estructura inválida. Asegúrese de incluir: 'Número de LPN', 'SKU', 'Descripción de artículo' y 'Un Actual'.");
-          }
-
-          let objetoCarga = {};
-          for (let i = 1; i < lineas.length; i++) {
-              if (!lineas[i].trim()) continue;
-              const celdas = lineas[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
-              
-              const lpnValor = celdas[idxLpn];
-              if (lpnValor) {
-                  // Firebase no permite ciertos caracteres especiales en los nodos clave, los limpiamos
-                  const claveLpn = lpnValor.replace(/[\.\#\$\[\]]/g, "-").trim();
-                  objetoCarga[claveLpn] = {
-                      lpnOriginal: lpnValor,
-                      sku: celdas[idxSku] || "",
-                      desc: celdas[idxDesc] || "",
-                      cant: parseInt(celdas[idxCant]) || 0
-                  };
-              }
-          }
-
-          // Guardar masivamente en la nube
-          db.ref('patio/excel_maestro').set(objetoCarga).then(() => {
-              alert("📊 ¡Excel cargado con éxito y guardado permanentemente en la nube!");
-          }).catch(err => {
-              alert("Error al sincronizar con Firebase: " + err.message);
-          });
-      };
-      lector.readAsText(archivo, 'UTF-8');
-  });
-
-  // Función para Eliminar el Excel de Firebase (Hacer Barrido)
-  function eliminarBaseDatosExcel() {
-      if(confirm("⚠ ¿Está seguro de eliminar por completo el Excel Maestro actual?\nEsto limpiará la base de datos para colocar una nueva lista.")) {
-          db.ref('patio/excel_maestro').remove().then(() => {
-              alert("🗑 La base de datos del Excel ha sido vaciada.");
-          });
-      }
-  }
-
-  // Función Autocompletar cuando el operador digita o pistolea un LPN en el Casillero
-  function buscarLpnEnExcelPersistente(valorLpn) {
-      const claveLpn = valorLpn.trim().replace(/[\.\#\$\[\]]/g, "-");
-      const registro = baseDatosExcel[claveLpn];
-
-      if(registro) {
-          document.getElementById('sku').value = registro.sku;
-          document.getElementById('descripcion').value = registro.desc;
-          document.getElementById('cantidad').value = registro.cant;
-      }
-  }
-
-  // Función de Auditoría Cruzada: Confirmar Barrido Faltante
-  function confirmarBarridoFaltantes() {
-      const llavesExcel = Object.keys(baseDatosExcel);
-      if(llavesExcel.length === 0) {
-          return alert("No hay ningún Excel cargado en la base de datos para realizar la comparación.");
-      }
-
-      // 1. Recopilar todos los LPNs mapeados actualmente en los casilleros físicos
-      let lpnsEnPatioFisico = new Set();
-      posiciones.forEach(pos => {
-          if(pos.tipo === 'pallet' && pos.filas) {
-              pos.filas.forEach(fila => {
-                  if(fila.lpn) {
-                      lpnsEnPatioFisico.add(fila.lpn.trim().toLowerCase());
+      let encontrado = false;
+      posiciones.forEach((pos) => {
+          if (pos.tipo === 'pallet') {
+              pos.filas.forEach((fila, idx) => {
+                  if (fila.lpn === lpnLimpio) {
+                      document.getElementById('con_sku').value = fila.sku || "Sin SKU";
+                      document.getElementById('con_cant').value = fila.cant || 0;
+                      document.getElementById('con_ubicacion').value = `${pos.id} (Fila ${idx+1})`;
+                      encontrado = true;
                   }
               });
           }
       });
 
-      // 2. Comparar el Excel en línea contra el Set del patio físico
-      let faltantes = [];
-      llavesExcel.forEach(clave => {
-          const item = baseDatosExcel[clave];
-          const lpnOriginal = item.lpnOriginal.trim();
-          
-          if(!lpnsEnPatioFisico.has(lpnOriginal.toLowerCase())) {
-              faltantes.push(item);
-          }
-      });
-
-      // 3. Renderizar resultados en el modal
-      const contenedor = document.getElementById('contenedor-faltantes-barrido');
-      contenedor.innerHTML = "";
-
-      if(faltantes.length === 0) {
-          contenedor.innerHTML = `<div style="color:#2ecc71; text-align:center; padding:15px; font-weight:bold;">✨ ¡Excelente! Todos los LPNs del Excel están pistoleados en el patio. Cero faltantes.</div>`;
-      } else {
-          faltantes.forEach(item => {
-              const div = document.createElement('div');
-              div.className = "item-faltante";
-              div.innerHTML = `<span>🆔 <strong>${item.lpnOriginal}</strong></span> <span>SKU: ${item.sku} (${item.cant} uds)</span>`;
-              contenedor.appendChild(div);
-          });
+      if(!encontrado) {
+          document.getElementById('con_sku').value = "No encontrado en patio";
+          document.getElementById('con_cant').value = "0";
+          document.getElementById('con_ubicacion').value = "Desconocida";
       }
-
-      // Mostrar Modal
-      document.getElementById('modalBarrido').style.display = 'flex';
   }
 
-  // Lógica del mapa y control visual original
-  function renderPatio() {
-      const pCont = document.getElementById('patio');
-      const busqueda = document.getElementById('global-search').value.trim().toLowerCase();
-      pCont.innerHTML = '';
-      
-      const basura = document.createElement('div');
-      basura.className = 'obstaculo'; 
-      basura.innerHTML = `<span>CONTENEDOR DE BASURA</span>`;
-      pCont.appendChild(basura);
-
-      posiciones.forEach((pos, pIndex) => {
-          const div = document.createElement('div');
-          let match = false;
-          if(busqueda !== "" && pos.tipo === 'pallet' && pos.filas){ 
-              match = pos.filas.some(f => f.sku && f.sku.toLowerCase().includes(busqueda)); 
-          }
-          div.className = `posicion ${match ? 'encontrado' : ''}`;
-
-          // Distribución de rejilla fija
-          if (pIndex < 11) { div.style.gridColumn = pIndex + 1; div.style.gridRow = 1; } 
-          else if (pIndex < 17) { div.style.gridColumn = 12 + (pIndex - 11); div.style.gridRow = 5; } 
-          else if (pIndex < 50) { let sub = pIndex - 17; div.style.gridColumn = (sub % 11) + 1; div.style.gridRow = Math.floor(sub / 11) + 2; } 
-          else { let ext = pIndex - 50; div.style.gridColumn = (ext % 15) + 1; div.style.gridRow = Math.floor(ext / 15) + 6; }
-
-          const infoSpan = document.createElement('div');
-          infoSpan.style.pointerEvents = 'none';
-          infoSpan.innerHTML = `<span class="id-piso">${pos.id}</span><span class="nivel-badge">${pos.tipo === 'pallet' && pos.filas ? pos.filas.filter(f => f.sku).length : 0}</span>`;
-          div.appendChild(infoSpan);
-
-          div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
-          if (abiertoId === pos.id) div.classList.add('abierto');
-
-          let detalle = document.createElement('div');
-          detalle.className = 'detalle-pila';
-          detalle.onclick = (e) => e.stopPropagation();
-
-          for (let n = 0; n < 5; n++) {
-              const b = document.createElement('button');
-              const data = (pos.filas && pos.filas[n]) ? pos.filas[n] : {sku:"", lpn:"", cant:0};
-              b.className = `fila-btn ${data.sku ? 'con-datos' : ''}`;
-              b.innerText = data.sku ? `F${n+1}: ${data.sku}` : `Fila ${n+1}`;
+  function previsualizarFotoConsumo(input) {
+      const img = document.getElementById('con_foto_preview');
+      if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              img.src = e.target.result;
+              img.style.display = 'block';
               
-              if(modoAdmin) {
-                  b.onclick = () => abrirModal(pIndex, n);
+              // Redimensionar imagen para no sobrecargar Firebase
+              const image = new Image();
+              image.src = e.target.result;
+              image.onload = function() {
+                  const canvas = document.createElement('canvas');
+                  const max_size = 400; // tamaño óptimo y liviano
+                  let width = image.width;
+                  let height = image.height;
+                  if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
+                  else { if (height > max_size) { width *= max_size / height; height = max_size; } }
+                  canvas.width = width;
+                  canvas.height = height;
+                  canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+                  fotoBase64Global = canvas.toDataURL('image/jpeg', 0.7); // compresión fluida
               }
-              detalle.appendChild(b);
           }
-          div.appendChild(detalle);
-          pCont.appendChild(div);
+          reader.readAsDataURL(input.files[0]);
+      }
+  }
+
+  function ejecutarBajaConsumo() {
+      const lpn = document.getElementById('con_lpn').value.trim();
+      const sku = document.getElementById('con_sku').value;
+      const cant = document.getElementById('con_cant').value;
+      const ubicacion = document.getElementById('con_ubicacion').value;
+      const obs = document.getElementById('con_obs').value.trim();
+
+      if (!lpn) return alert("Por favor inserte un LPN.");
+      if (!fotoBase64Global) return alert("Es obligatorio capturar una fotografía como evidencia física.");
+
+      let posIndexAfectado = null;
+      let modificado = false;
+
+      // Borrar físicamente del mapa logístico en tiempo real
+      posiciones.forEach((pos, pIdx) => {
+          if (pos.tipo === 'pallet') {
+              pos.filas.forEach((fila, fIdx) => {
+                  if (fila.lpn === lpn) {
+                      posiciones[pIdx].filas[fIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" };
+                      modificado = true;
+                      posIndexAfectado = pIdx;
+                  }
+              });
+          }
       });
-      actualizarTablas();
+
+      // Crear objeto del historial
+      const registroBaja = {
+          lpn: lpn,
+          sku: sku,
+          cant: cant,
+          ubicacion: ubicacion,
+          observacion: obs,
+          foto: fotoBase64Global,
+          timestamp: Date.now()
+      };
+
+      // Guardar en el historial de Firebase
+      db.ref('patio/historial_bajas').push(registroBaja).then(() => {
+          if(modificado && posIndexAfectado !== null) {
+              db.ref('patio/posiciones/' + posIndexAfectado).set(posiciones[posIndexAfectado]);
+          }
+          alert(`✅ Consumo guardado e historial actualizado con fotografía para el LPN: ${lpn}`);
+          limpiarFormularioConsumo();
+      });
   }
 
-  function abrirModal(p, n) {
-      editandoContexto = { pIndex: p, nIndex: n };
-      if (!posiciones[p].filas) posiciones[p].filas = [];
-      if (!posiciones[p].filas[n]) posiciones[p].filas[n] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" };
-      
-      const d = posiciones[p].filas[n];
-      document.getElementById('sku').value = d.sku || "";
-      document.getElementById('lpn_num').value = d.lpn || "";
-      document.getElementById('cantidad').value = d.cant || 0;
-      document.getElementById('descripcion').value = d.desc || "";
-      document.getElementById('tonalidad').value = d.tono || "";
-      document.getElementById('observacion').value = d.obs || "";
-      document.getElementById('modalDatos').style.display = 'flex';
+  function ampliarImagen(src) {
+      document.getElementById('img-ampliada').src = src;
+      document.getElementById('modalFotoGrande').style.display = 'flex';
   }
 
-  function guardarDatos() {
-      const { pIndex, nIndex } = editandoContexto;
-      const f = posiciones[pIndex].filas[nIndex];
-      f.sku = document.getElementById('sku').value.trim();
-      f.lpn = document.getElementById('lpn_num').value.trim();
-      f.cant = parseInt(document.getElementById('cantidad').value) || 0;
-      f.desc = document.getElementById('descripcion').value.trim();
-      f.tono = document.getElementById('tonalidad').value.trim();
-      f.obs = document.getElementById('observacion').value.trim();
-      
-      db.ref('patio/posiciones/' + pIndex).set(posiciones[pIndex]).then(() => cerrarModal('modalDatos'));
+  function limpiarFormularioConsumo() {
+      document.getElementById('con_lpn').value = '';
+      limpiarCamposLectura();
+      document.getElementById('con_obs').value = '';
+      document.getElementById('con_foto_file').value = '';
+      document.getElementById('con_foto_preview').style.display = 'none';
+      fotoBase64Global = "";
+  }
+
+  function limpiarCamposLectura() {
+      document.getElementById('con_sku').value = '';
+      document.getElementById('con_cant').value = '';
+      document.getElementById('con_ubicacion').value = '';
   }
 
   function iniciarSesion() {
@@ -588,12 +668,123 @@
 
   function mostrarSeccion(id) {
       document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
-      if(id === 'mapa-seccion') document.getElementById('mapa-seccion').classList.add('active');
-      else if(id === 'activos-seccion') document.getElementById('activos-seccion').classList.add('active');
+      
+      if(id === 'menu-mapa') document.getElementById('mapa-seccion').classList.add('active');
+      else if(id === 'menu-activos') document.getElementById('activos-seccion').classList.add('active');
+      else if(id === 'menu-consumo') document.getElementById('consumo-seccion').classList.add('active');
       
       document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-      const menuTrigger = id === 'mapa-seccion' ? 'menu-mapa' : 'menu-activos';
-      document.getElementById(menuTrigger).classList.add('active');
+      document.getElementById(id).classList.add('active');
+  }
+
+  // Lector de CSV Maestro
+  document.getElementById('cargar-excel-file').addEventListener('change', function(e) {
+      const archivo = e.target.files[0];
+      if (!archivo) return;
+      const lector = new FileReader();
+      lector.onload = function(evt) {
+          const contenido = evt.target.result;
+          const lineas = contenido.split(/\r?\n/);
+          if (lineas.length < 2) return;
+          const sep = lineas[0].includes(';') ? ';' : ',';
+          const columnas = lineas[0].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+          const idxLpn = columnas.indexOf('Número de LPN');
+          const idxSku = columnas.indexOf('SKU');
+          const idxDesc = columnas.indexOf('Descripción de artículo');
+          const idxCant = columnas.indexOf('Un Actual');
+
+          if (idxLpn === -1 || idxSku === -1 || idxDesc === -1 || idxCant === -1) return alert("Columnas incorrectas");
+
+          baseDatosExcel = {};
+          let total = 0;
+          for (let i = 1; i < lineas.length; i++) {
+              if (!lineas[i].trim()) continue;
+              const celdas = lineas[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+              if (celdas[idxLpn]) {
+                  baseDatosExcel[celdas[idxLpn]] = { sku: celdas[idxSku] || "", desc: celdas[idxDesc] || "", cant: parseInt(celdas[idxCant]) || 0 };
+                  total++;
+              }
+          }
+          document.getElementById('excel-status').innerText = `✅ ${total} LPNs listos.`;
+      };
+      lector.readAsText(archivo, 'UTF-8');
+  });
+
+  function renderPatio() {
+      const pCont = document.getElementById('patio');
+      const busqueda = document.getElementById('global-search').value.trim().toLowerCase();
+      pCont.innerHTML = '';
+      
+      const basura = document.createElement('div');
+      basura.className = 'obstaculo'; 
+      basura.innerHTML = `<span>CONTENEDOR DE BASURA</span>`;
+      pCont.appendChild(basura);
+
+      posiciones.forEach((pos, pIndex) => {
+          const div = document.createElement('div');
+          let match = false;
+          if(busqueda !== "" && pos.tipo === 'pallet'){ 
+              match = pos.filas.some(f => f.sku.toLowerCase().includes(busqueda)); 
+          }
+          div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
+
+          // Distribución en rejilla
+          if (pIndex < 11) { div.style.gridColumn = pIndex + 1; div.style.gridRow = 1; } 
+          else if (pIndex < 17) { div.style.gridColumn = 12 + (pIndex - 11); div.style.gridRow = 5; } 
+          else if (pIndex < 50) { let sub = pIndex - 17; div.style.gridColumn = (sub % 11) + 1; div.style.gridRow = Math.floor(sub / 11) + 2; } 
+          else { let ext = pIndex - 50; div.style.gridColumn = (ext % 15) + 1; div.style.gridRow = Math.floor(ext / 15) + 6; }
+
+          const infoSpan = document.createElement('div');
+          infoSpan.style.pointerEvents = 'none';
+          infoSpan.innerHTML = `<span class="id-piso">${pos.id}</span><span class="nivel-badge">${pos.tipo === 'pallet' ? pos.filas.filter(f => f.sku).length : ''}</span><span class="icon-objeto">⚙️</span>`;
+          div.appendChild(infoSpan);
+
+          div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
+          if (abiertoId === pos.id) div.classList.add('abierto');
+
+          let detalle = document.createElement('div');
+          detalle.className = 'detalle-pila';
+          detalle.onclick = (e) => e.stopPropagation();
+
+          for (let n = 0; n < 5; n++) {
+              const b = document.createElement('button');
+              const data = pos.tipo === 'pallet' ? pos.filas[n] : pos.filasObjeto[n];
+              b.className = `fila-btn ${pos.tipo === 'pallet' ? (data.sku ? 'con-datos' : '') : (data.tipo ? 'objeto-datos' : '')}`;
+              b.innerText = pos.tipo === 'pallet' ? (data.sku ? `F${n+1}: ${data.sku}` : `Fila ${n+1}`) : (data.tipo ? `N${n+1}: ${data.tipo}` : `Nivel ${n+1}`);
+              
+              if(modoAdmin) {
+                  b.onclick = () => pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
+              }
+              detalle.appendChild(b);
+          }
+          div.appendChild(detalle);
+          pCont.appendChild(div);
+      });
+      actualizarTablas();
+  }
+
+  function abrirModal(p, n) {
+      editandoContexto = { pIndex: p, nIndex: n };
+      const d = posiciones[p].filas[n];
+      document.getElementById('sku').value = d.sku || "";
+      document.getElementById('lpn_num').value = d.lpn || "";
+      document.getElementById('cantidad').value = d.cant || 0;
+      document.getElementById('descripcion').value = d.desc || "";
+      document.getElementById('tonalidad').value = d.tono || "";
+      document.getElementById('observacion').value = d.obs || "";
+      document.getElementById('modalDatos').style.display = 'flex';
+  }
+
+  function guardarDatos() {
+      const { pIndex, nIndex } = editandoContexto;
+      const f = posiciones[pIndex].filas[nIndex];
+      f.sku = document.getElementById('sku').value;
+      f.lpn = document.getElementById('lpn_num').value;
+      f.cant = parseInt(document.getElementById('cantidad').value) || 0;
+      f.desc = document.getElementById('descripcion').value;
+      f.tono = document.getElementById('tonalidad').value;
+      f.obs = document.getElementById('observacion').value;
+      db.ref('patio/posiciones/' + pIndex).set(posiciones[pIndex]).then(() => cerrarModal('modalDatos'));
   }
 
   function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -603,7 +794,7 @@
   function actualizarTablas() {
       let skus = {}; let tCant = 0; let tLpns = 0; let detalleHtml = '';
       posiciones.forEach(pos => {
-          if(pos.tipo === 'pallet' && pos.filas) {
+          if(pos.tipo === 'pallet') {
               pos.filas.forEach((f, i) => {
                   if(f.sku) {
                       skus[f.sku] = (skus[f.sku] || 0) + f.cant;
