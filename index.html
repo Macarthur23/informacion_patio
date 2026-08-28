@@ -710,6 +710,26 @@
       lector.readAsText(archivo, 'UTF-8');
   });
 
+  // ===== NUEVO: cálculo de celdas disponibles sin huecos, respetando el obstáculo =====
+  function calcularCeldasDisponibles(cantidad) {
+      const columnas = 15;
+      const colObstaculo = 12;
+      const filaObstaculoInicio = 1;
+      const filaObstaculoFin = 4;
+      const celdas = [];
+      let row = 1;
+      while (celdas.length < cantidad) {
+          for (let col = 1; col <= columnas; col++) {
+              const esObstaculo = (col === colObstaculo && row >= filaObstaculoInicio && row <= filaObstaculoFin);
+              if (esObstaculo) continue;
+              celdas.push({ row, col });
+              if (celdas.length >= cantidad) break;
+          }
+          row++;
+      }
+      return celdas;
+  }
+
   function renderPatio() {
       const pCont = document.getElementById('patio');
       const busqueda = document.getElementById('global-search').value.trim().toLowerCase();
@@ -720,6 +740,8 @@
       basura.innerHTML = `<span>CONTENEDOR DE BASURA</span>`;
       pCont.appendChild(basura);
 
+      const celdas = calcularCeldasDisponibles(posiciones.length);
+
       posiciones.forEach((pos, pIndex) => {
           const div = document.createElement('div');
           let match = false;
@@ -728,16 +750,22 @@
           }
           div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
 
-          // Distribución en rejilla
-          if (pIndex < 11) { div.style.gridColumn = pIndex + 1; div.style.gridRow = 1; } 
-          else if (pIndex < 17) { div.style.gridColumn = 12 + (pIndex - 11); div.style.gridRow = 5; } 
-          else if (pIndex < 50) { let sub = pIndex - 17; div.style.gridColumn = (sub % 11) + 1; div.style.gridRow = Math.floor(sub / 11) + 2; } 
-          else { let ext = pIndex - 50; div.style.gridColumn = (ext % 15) + 1; div.style.gridRow = Math.floor(ext / 15) + 6; }
+          // Distribución en rejilla: siguiente celda libre en orden, saltando el obstáculo
+          const celda = celdas[pIndex];
+          div.style.gridColumn = celda.col;
+          div.style.gridRow = celda.row;
 
           const infoSpan = document.createElement('div');
           infoSpan.style.pointerEvents = 'none';
           infoSpan.innerHTML = `<span class="id-piso">${pos.id}</span><span class="nivel-badge">${pos.tipo === 'pallet' ? pos.filas.filter(f => f.sku).length : ''}</span><span class="icon-objeto">⚙️</span>`;
           div.appendChild(infoSpan);
+
+          // Botón para eliminar el espacio (solo visible para admin, gracias a view-only-hidden)
+          const btnCerrar = document.createElement('div');
+          btnCerrar.className = 'btn-cerrar view-only-hidden';
+          btnCerrar.innerText = '✕';
+          btnCerrar.onclick = (e) => { e.stopPropagation(); eliminarPosicion(pIndex); };
+          div.appendChild(btnCerrar);
 
           div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
           if (abiertoId === pos.id) div.classList.add('abierto');
@@ -761,6 +789,28 @@
           pCont.appendChild(div);
       });
       actualizarTablas();
+  }
+
+  // ===== NUEVO: eliminar una posición del patio =====
+  function eliminarPosicion(pIndex) {
+      if (!modoAdmin) return;
+      const pos = posiciones[pIndex];
+      if (!pos) return;
+
+      const tieneDatos = pos.tipo === 'pallet'
+          ? pos.filas.some(f => f.sku)
+          : (pos.filasObjeto && pos.filasObjeto.some(f => f.tipo));
+
+      const mensaje = tieneDatos
+          ? `El espacio "${pos.id}" tiene datos guardados. ¿Seguro que deseas eliminarlo? Esta acción no se puede deshacer.`
+          : `¿Eliminar el espacio "${pos.id}"?`;
+
+      if (!confirm(mensaje)) return;
+
+      if (abiertoId === pos.id) abiertoId = null;
+
+      posiciones.splice(pIndex, 1);
+      db.ref('patio/posiciones').set(posiciones);
   }
 
   function abrirModal(p, n) {
