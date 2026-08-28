@@ -711,23 +711,57 @@
   });
 
   // ===== NUEVO: cálculo de celdas disponibles sin huecos, respetando el obstáculo =====
+  // El obstáculo bloquea TODO el ancho a su derecha (columnas 12 a 15) durante sus filas,
+  // así los casilleros de la derecha recién retoman en la fila siguiente a la del obstáculo.
   function calcularCeldasDisponibles(cantidad) {
       const columnas = 15;
-      const colObstaculo = 12;
+      const colObstaculoInicio = 12;
       const filaObstaculoInicio = 1;
       const filaObstaculoFin = 4;
       const celdas = [];
       let row = 1;
       while (celdas.length < cantidad) {
           for (let col = 1; col <= columnas; col++) {
-              const esObstaculo = (col === colObstaculo && row >= filaObstaculoInicio && row <= filaObstaculoFin);
-              if (esObstaculo) continue;
+              const esZonaObstaculo = (col >= colObstaculoInicio && row >= filaObstaculoInicio && row <= filaObstaculoFin);
+              if (esZonaObstaculo) continue;
               celdas.push({ row, col });
               if (celdas.length >= cantidad) break;
           }
           row++;
       }
       return celdas;
+  }
+
+  // ===== NUEVO: añadir un nuevo espacio (casillero) al patio =====
+  function agregarPosicion() {
+      if (!modoAdmin) return;
+
+      const id = prompt("Ingresa el ID del nuevo espacio (ej: S-58):");
+      if (!id || !id.trim()) return;
+      const idLimpio = id.trim();
+
+      const yaExiste = posiciones.some(p => p.id === idLimpio);
+      if (yaExiste) { alert("Ya existe un espacio con ese ID."); return; }
+
+      const esObjeto = confirm('¿Qué tipo de espacio es?\n\nAceptar = Espacio de OBJETOS/ACTIVOS\nCancelar = Espacio de PALLET (SKU)');
+
+      let nuevaPosicion;
+      if (esObjeto) {
+          nuevaPosicion = {
+              id: idLimpio,
+              tipo: 'objeto',
+              filasObjeto: Array.from({ length: 5 }, () => ({ tipo: "", cant: 0 }))
+          };
+      } else {
+          nuevaPosicion = {
+              id: idLimpio,
+              tipo: 'pallet',
+              filas: Array.from({ length: 5 }, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }))
+          };
+      }
+
+      posiciones.push(nuevaPosicion);
+      db.ref('patio/posiciones').set(posiciones);
   }
 
   function renderPatio() {
