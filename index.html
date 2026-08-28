@@ -489,7 +489,9 @@
   let abiertoId = null;
   let posiciones = [];
   let baseDatosExcel = {};
-  let fotoBase64Global = ""; 
+  let fotoBase64Global = "";
+  let editandoContexto = null;
+  let editandoContextoObjeto = null;
 
   // Escuchar Cambios en Posiciones
   db.ref('patio/posiciones').on('value', (snapshot) => {
@@ -732,36 +734,51 @@
       return celdas;
   }
 
-  // ===== NUEVO: añadir un nuevo espacio (casillero) al patio =====
+  // ===== NUEVO: añadir un nuevo espacio (casillero) al patio, con ID automático =====
   function agregarPosicion() {
       if (!modoAdmin) return;
 
-      const id = prompt("Ingresa el ID del nuevo espacio (ej: S-58):");
-      if (!id || !id.trim()) return;
-      const idLimpio = id.trim();
+      let maxNum = 0;
+      posiciones.forEach(p => {
+          const match = /^S-(\d+)$/.exec(p.id);
+          if (match) {
+              const num = parseInt(match[1]);
+              if (num > maxNum) maxNum = num;
+          }
+      });
+      const nuevoId = `S-${maxNum + 1}`;
 
-      const yaExiste = posiciones.some(p => p.id === idLimpio);
-      if (yaExiste) { alert("Ya existe un espacio con ese ID."); return; }
-
-      const esObjeto = confirm('¿Qué tipo de espacio es?\n\nAceptar = Espacio de OBJETOS/ACTIVOS\nCancelar = Espacio de PALLET (SKU)');
-
-      let nuevaPosicion;
-      if (esObjeto) {
-          nuevaPosicion = {
-              id: idLimpio,
-              tipo: 'objeto',
-              filasObjeto: Array.from({ length: 5 }, () => ({ tipo: "", cant: 0 }))
-          };
-      } else {
-          nuevaPosicion = {
-              id: idLimpio,
-              tipo: 'pallet',
-              filas: Array.from({ length: 5 }, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }))
-          };
-      }
+      const nuevaPosicion = {
+          id: nuevoId,
+          tipo: 'pallet',
+          filas: Array.from({ length: 5 }, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }))
+      };
 
       posiciones.push(nuevaPosicion);
       db.ref('patio/posiciones').set(posiciones);
+  }
+
+  // ===== NUEVO: convertir un espacio entre Pallet (SKU) y Objeto/Activo =====
+  function alternarTipoPosicion(pIndex) {
+      if (!modoAdmin) return;
+      const pos = posiciones[pIndex];
+      if (!pos) return;
+
+      if (pos.tipo === 'pallet') {
+          const tieneDatos = pos.filas.some(f => f.sku);
+          if (tieneDatos && !confirm(`El espacio "${pos.id}" tiene datos de SKU cargados. Al convertirlo a Objeto se perderán. ¿Continuar?`)) return;
+          pos.tipo = 'objeto';
+          pos.filasObjeto = Array.from({ length: 5 }, () => ({ tipo: "", cant: 0 }));
+          delete pos.filas;
+      } else {
+          const tieneDatos = pos.filasObjeto && pos.filasObjeto.some(f => f.tipo);
+          if (tieneDatos && !confirm(`El espacio "${pos.id}" tiene objetos cargados. Al convertirlo a Pallet se perderán. ¿Continuar?`)) return;
+          pos.tipo = 'pallet';
+          pos.filas = Array.from({ length: 5 }, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }));
+          delete pos.filasObjeto;
+      }
+
+      db.ref('patio/posiciones/' + pIndex).set(pos);
   }
 
   function renderPatio() {
@@ -819,6 +836,16 @@
               }
               detalle.appendChild(b);
           }
+
+          // Botón para alternar entre espacio de Pallet (SKU) y espacio de Objeto/Activo
+          if (modoAdmin) {
+              const btnObjeto = document.createElement('button');
+              btnObjeto.className = 'btn-objeto-trigger';
+              btnObjeto.innerText = pos.tipo === 'objeto' ? '📦 Convertir a Pallet' : '⚙️ Convertir a Objeto';
+              btnObjeto.onclick = (e) => { e.stopPropagation(); alternarTipoPosicion(pIndex); };
+              detalle.appendChild(btnObjeto);
+          }
+
           div.appendChild(detalle);
           pCont.appendChild(div);
       });
@@ -845,6 +872,22 @@
 
       posiciones.splice(pIndex, 1);
       db.ref('patio/posiciones').set(posiciones);
+  }
+
+  function abrirModalObjeto(p, n) {
+      editandoContextoObjeto = { pIndex: p, nIndex: n };
+      const d = posiciones[p].filasObjeto[n];
+      document.getElementById('objTipo').value = d.tipo || "";
+      document.getElementById('objCant').value = d.cant || 0;
+      document.getElementById('modalObjeto').style.display = 'flex';
+  }
+
+  function guardarObjeto() {
+      const { pIndex, nIndex } = editandoContextoObjeto;
+      const f = posiciones[pIndex].filasObjeto[nIndex];
+      f.tipo = document.getElementById('objTipo').value;
+      f.cant = parseInt(document.getElementById('objCant').value) || 0;
+      db.ref('patio/posiciones/' + pIndex).set(posiciones[pIndex]).then(() => cerrarModal('modalObjeto'));
   }
 
   function abrirModal(p, n) {
