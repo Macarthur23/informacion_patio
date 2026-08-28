@@ -104,6 +104,34 @@
     }
     .posicion.drag-over { border: 2px dashed var(--accent); background: rgba(52, 152, 219, 0.1); }
     .posicion.es-objeto { background: var(--objeto) !important; border-color: #bdc3c7; }
+    .posicion { touch-action: none; }
+    .posicion.arrastrando { opacity: 0.4; cursor: grabbing !important; z-index: 3000; border-color: var(--accent); }
+    body:not(.viewer-mode) .posicion { cursor: grab; }
+
+    .patio-grid-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    #btn-menu-movil {
+        display: none; position: fixed; top: 15px; left: 15px; z-index: 3500;
+        background: var(--accent); color: white; border: none; width: 42px; height: 42px;
+        border-radius: 8px; font-size: 1.3rem; cursor: pointer; align-items: center; justify-content: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    @media (max-width: 768px) {
+        #btn-menu-movil { display: flex; }
+        .sidebar { transform: translateX(-100%); transition: transform 0.25s ease; width: 220px; }
+        .sidebar.abierto { transform: translateX(0); box-shadow: 0 0 25px rgba(0,0,0,0.6); }
+        .main-content { margin-left: 0; padding: 15px; padding-top: 70px; }
+        .search-input { width: 100%; max-width: 260px; }
+        .grid-tablas { grid-template-columns: 1fr; }
+        .consumo-wrapper { grid-template-columns: 1fr; }
+        .patio-grid { grid-template-columns: repeat(15, 44px); grid-auto-rows: 44px; gap: 6px; margin-top: 20px; }
+        .posicion { width: 44px; height: 44px; }
+        .nivel-badge { font-size: 0.9rem; }
+        .id-piso { font-size: 0.5rem; }
+        .obstaculo { font-size: 0.5rem; }
+        .modal-content { max-width: 92%; }
+    }
 
     .encontrado { animation: parpadeo-busqueda 1s infinite; z-index: 10; }
     @keyframes parpadeo-busqueda {
@@ -147,68 +175,68 @@
 
     .btn-objeto-trigger { background: #2980b9; color: white; font-weight: bold; margin-bottom: 5px; border: 1px solid #fff; cursor: pointer; padding: 5px; border-radius: 4px; font-size: 0.7rem; }
 
-    .modal { 
-        display: none; 
-        position: fixed; 
-        top: 0; left: 0; 
-        width: 100%; height: 100%; 
-        background: rgba(0,0,0,0.85); 
-        z-index: 4000; 
-        justify-content: center; 
-        align-items: center; 
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85);
+        z-index: 4000;
+        justify-content: center;
+        align-items: center;
         overflow-y: auto;
     }
-    
+
     #modalCamara { z-index: 7000 !important; }
 
-    .modal-content { 
-        background: #2d2d2d; 
-        padding: 20px; 
-        border-radius: 12px; 
+    .modal-content {
+        background: #2d2d2d;
+        padding: 20px;
+        border-radius: 12px;
         width: 90%;
-        max-width: 360px; 
-        border: 1px solid var(--accent); 
-        box-sizing: border-box; 
+        max-width: 360px;
+        border: 1px solid var(--accent);
+        box-sizing: border-box;
     }
-    
+
     .form-group { margin-bottom: 12px; position: relative; }
     .form-group label { display: block; font-size: 0.75rem; color: #aaa; margin-bottom: 4px; }
-    
-    .form-group input, .form-group textarea { 
-        width: 100%; 
-        background: #1a1a1a; 
-        border: 1px solid #444; 
-        color: white; 
-        padding: 10px; 
-        border-radius: 6px; 
-        box-sizing: border-box; 
-    }
-    
-    .form-group input.has-btn { padding-right: 85px; }
-    
-    .btn-scanner-input {
-        position: absolute; 
-        right: 4px; 
-        top: 20px; 
-        background: var(--accent); 
-        border: none; 
+
+    .form-group input, .form-group textarea {
+        width: 100%;
+        background: #1a1a1a;
+        border: 1px solid #444;
         color: white;
-        padding: 6px 10px; 
-        border-radius: 4px; 
-        font-size: 0.75rem; 
-        cursor: pointer; 
+        padding: 10px;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    .form-group input.has-btn { padding-right: 85px; }
+
+    .btn-scanner-input {
+        position: absolute;
+        right: 4px;
+        top: 20px;
+        background: var(--accent);
+        border: none;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
         font-weight: bold;
         z-index: 10;
     }
 
-    #lector-camara-contenedor { 
-        width: 100%; 
-        height: 250px; 
-        background: #111; 
-        border-radius: 8px; 
-        overflow: hidden; 
-        margin-bottom: 15px; 
-        border: 2px dashed var(--accent); 
+    #lector-camara-contenedor {
+        width: 100%;
+        height: 250px;
+        background: #111;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 15px;
+        border: 2px dashed var(--accent);
     }
 
     .excel-btn-container { display: inline-flex; align-items: center; background: #27ae60; padding: 8px 15px; border-radius: 6px; border: 1px solid #2ecc71; margin-left: 10px; gap: 8px; vertical-align: middle; }
@@ -292,6 +320,8 @@
 </head>
 <body>
 
+<button id="btn-menu-movil" onclick="alternarMenuMovil()">☰</button>
+
 <div id="login-overlay">
   <div class="login-box">
     <h2>Acceso PatioPro</h2>
@@ -329,12 +359,14 @@
     <div class="controles view-only-hidden" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
       <button class="btn-login" style="width:auto; margin-top:0; padding:10px 20px;" onclick="agregarPosicion()">+ Añadir Espacio</button>
       <div class="excel-btn-container">
-          <label for="cargar-excel-file">📊 Cargar Excel (.csv)</label>
-          <input type="file" id="cargar-excel-file" accept=".csv">
+        <label for="cargar-excel-file">📊 Cargar Excel (.csv)</label>
+        <input type="file" id="cargar-excel-file" accept=".csv">
       </div>
       <span id="excel-status"></span>
     </div>
-    <div class="patio-grid" id="patio"></div>
+    <div class="patio-grid-wrapper">
+      <div class="patio-grid" id="patio"></div>
+    </div>
   </div>
 
   <!-- SECCIÓN 2: ACTIVOS -->
@@ -378,50 +410,50 @@
   <!-- SECCIÓN 3: CONSUMO + HISTORIAL VINCULADO CON FOTO -->
   <div id="consumo-seccion" class="section-panel">
     <h2 style="text-align: center; color: var(--danger);">Bajas Rápidas y Consumo de Patio</h2>
-    
+
     <div class="consumo-wrapper">
-        <!-- Formulario Inteligente Completo -->
-        <div class="consumo-card">
-            <div class="form-group">
-                <label>Código o LPN a dar de baja</label>
-                <input type="text" id="con_lpn" placeholder="Escanee o escriba el LPN..." oninput="autoBuscarLpnEnPatio(this.value)">
-            </div>
-            <div class="form-group">
-                <label>SKU Vinculado (Lectura)</label>
-                <input type="text" id="con_sku" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
-            </div>
-            <div class="form-group">
-                <label>Cantidad Actual (Lectura)</label>
-                <input type="text" id="con_cant" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
-            </div>
-            <div class="form-group">
-                <label>Ubicación Actual (Lectura)</label>
-                <input type="text" id="con_ubicacion" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
-            </div>
-
-            <!-- Botón de Foto -->
-            <div class="form-group view-only-hidden">
-                <label>Evidencia Física (Foto Obligatoria)</label>
-                <label for="con_foto_file" class="btn-foto-disparador">📷 Capturar Evidencia / Tomar Foto</label>
-                <input type="file" id="con_foto_file" accept="image/*" capture="environment" onchange="previsualizarFotoConsumo(this)" style="display:none;">
-                <img id="con_foto_preview" class="preview-foto" src="" alt="Vista previa">
-            </div>
-            
-            <div class="form-group">
-                <label>Observación del Consumo</label>
-                <textarea id="con_obs" rows="3" placeholder="Detalle el motivo del consumo..."></textarea>
-            </div>
-            
-            <button class="btn-login view-only-hidden" style="background:var(--danger); width:100%; font-size:1.1rem; margin-top:15px;" onclick="ejecutarBajaConsumo()">🔥 Confirmar y Guardar Transacción</button>
+      <!-- Formulario Inteligente Completo -->
+      <div class="consumo-card">
+        <div class="form-group">
+          <label>Código o LPN a dar de baja</label>
+          <input type="text" id="con_lpn" placeholder="Escanee o escriba el LPN..." oninput="autoBuscarLpnEnPatio(this.value)">
+        </div>
+        <div class="form-group">
+          <label>SKU Vinculado (Lectura)</label>
+          <input type="text" id="con_sku" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
+        </div>
+        <div class="form-group">
+          <label>Cantidad Actual (Lectura)</label>
+          <input type="text" id="con_cant" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
+        </div>
+        <div class="form-group">
+          <label>Ubicación Actual (Lectura)</label>
+          <input type="text" id="con_ubicacion" readonly style="background:#222; opacity:0.7;" placeholder="Se llena automáticamente...">
         </div>
 
-        <!-- Panel del Historial con Fotos Guardadas -->
-        <div class="historial-card">
-            <h3 style="margin-top:0; color:var(--accent);">📋 Registro de LPNs Consumidos</h3>
-            <div class="lista-bajas" id="registro-bajas-lista">
-                <div style="text-align:center; color:#888; padding-top:20px;">Cargando historial de consumos...</div>
-            </div>
+        <!-- Botón de Foto -->
+        <div class="form-group view-only-hidden">
+          <label>Evidencia Física (Foto Obligatoria)</label>
+          <label for="con_foto_file" class="btn-foto-disparador">📷 Capturar Evidencia / Tomar Foto</label>
+          <input type="file" id="con_foto_file" accept="image/*" capture="environment" onchange="previsualizarFotoConsumo(this)" style="display:none;">
+          <img id="con_foto_preview" class="preview-foto" src="" alt="Vista previa">
         </div>
+
+        <div class="form-group">
+          <label>Observación del Consumo</label>
+          <textarea id="con_obs" rows="3" placeholder="Detalle el motivo del consumo..."></textarea>
+        </div>
+
+        <button class="btn-login view-only-hidden" style="background:var(--danger); width:100%; font-size:1.1rem; margin-top:15px;" onclick="ejecutarBajaConsumo()">🔥 Confirmar y Guardar Transacción</button>
+      </div>
+
+      <!-- Panel del Historial con Fotos Guardadas -->
+      <div class="historial-card">
+        <h3 style="margin-top:0; color:var(--accent);">📋 Registro de LPNs Consumidos</h3>
+        <div class="lista-bajas" id="registro-bajas-lista">
+          <div style="text-align:center; color:#888; padding-top:20px;">Cargando historial de consumos...</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -463,7 +495,7 @@
 
 <!-- Modal para Ampliar la Foto Guardada -->
 <div id="modalFotoGrande" class="modal" onclick="cerrarModal('modalFotoGrande')">
-    <img id="img-ampliada" src="" style="max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 5px 25px rgba(0,0,0,0.8);">
+  <img id="img-ampliada" src="" style="max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 5px 25px rgba(0,0,0,0.8);">
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
@@ -493,6 +525,23 @@
   let editandoContexto = null;
   let editandoContextoObjeto = null;
 
+  // ===== NUEVO: estado del arrastre (mouse y táctil, vía Pointer Events) =====
+  let dragState = {
+      pointerId: null,
+      pIndexOrigen: null,
+      elementoOrigen: null,
+      elementoSobre: null,
+      timerPresion: null,
+      startX: 0,
+      startY: 0,
+      activo: false,
+      seMovio: false
+  };
+
+  function alternarMenuMovil() {
+      document.querySelector('.sidebar').classList.toggle('abierto');
+  }
+
   // Escuchar Cambios en Posiciones
   db.ref('patio/posiciones').on('value', (snapshot) => {
       const data = snapshot.val();
@@ -504,7 +553,7 @@
       const listaContenedor = document.getElementById('registro-bajas-lista');
       listaContenedor.innerHTML = "";
       const data = snapshot.val();
-      
+
       if (!data) {
           listaContenedor.innerHTML = `<div style="text-align:center; color:#888; padding-top:20px;">No hay registros de consumos previos.</div>`;
           return;
@@ -513,9 +562,9 @@
       Object.values(data).reverse().forEach(item => {
           const div = document.createElement('div');
           div.className = "item-baja";
-          
+
           let imgTag = item.foto ? `<img src="${item.foto}" class="item-baja-img" onclick="ampliarImagen('${item.foto}')">` : `<div class="item-baja-img" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🚫</div>`;
-          
+
           div.innerHTML = `
               ${imgTag}
               <div class="item-baja-info">
@@ -560,7 +609,7 @@
           reader.onload = function(e) {
               img.src = e.target.result;
               img.style.display = 'block';
-              
+
               // Redimensionar imagen para no sobrecargar Firebase
               const image = new Image();
               image.src = e.target.result;
@@ -670,13 +719,15 @@
 
   function mostrarSeccion(id) {
       document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
-      
+
       if(id === 'menu-mapa') document.getElementById('mapa-seccion').classList.add('active');
       else if(id === 'menu-activos') document.getElementById('activos-seccion').classList.add('active');
       else if(id === 'menu-consumo') document.getElementById('consumo-seccion').classList.add('active');
-      
+
       document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
       document.getElementById(id).classList.add('active');
+
+      document.querySelector('.sidebar').classList.remove('abierto');
   }
 
   // Lector de CSV Maestro
@@ -781,13 +832,114 @@
       db.ref('patio/posiciones/' + pIndex).set(pos);
   }
 
+  // ===== NUEVO: sistema de arrastre por presión sostenida (mouse click-sostenido y táctil en celular) =====
+  function iniciarPresionCasillero(e, pIndex, div) {
+      if (!modoAdmin) return;
+      if (e.target.closest('.btn-cerrar, .fila-btn, .btn-objeto-trigger, .detalle-pila')) return;
+      if (e.button !== undefined && e.button !== 0) return; // solo botón izquierdo del mouse
+
+      dragState.pointerId = e.pointerId;
+      dragState.startX = e.clientX;
+      dragState.startY = e.clientY;
+      dragState.seMovio = false;
+      dragState.activo = false;
+      dragState.pIndexOrigen = pIndex;
+      dragState.elementoOrigen = div;
+      dragState.elementoSobre = null;
+
+      dragState.timerPresion = setTimeout(activarArrastre, 350);
+  }
+
+  function activarArrastre() {
+      dragState.activo = true;
+      dragState.elementoOrigen.classList.add('arrastrando');
+      if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  function moverArrastre(e) {
+      if (dragState.pIndexOrigen === null) return;
+
+      const dx = Math.abs(e.clientX - dragState.startX);
+      const dy = Math.abs(e.clientY - dragState.startY);
+
+      if (!dragState.activo) {
+          // Si se mueve antes de que se active el arrastre (ej: está haciendo scroll), se cancela
+          if (dx > 10 || dy > 10) {
+              clearTimeout(dragState.timerPresion);
+              resetDragState();
+          }
+          return;
+      }
+
+      e.preventDefault();
+      dragState.seMovio = true;
+
+      const elBajoPuntero = document.elementFromPoint(e.clientX, e.clientY);
+      const posEl = elBajoPuntero ? elBajoPuntero.closest('.posicion') : null;
+
+      if (dragState.elementoSobre && dragState.elementoSobre !== posEl) {
+          dragState.elementoSobre.classList.remove('drag-over');
+          dragState.elementoSobre = null;
+      }
+      if (posEl && posEl !== dragState.elementoOrigen) {
+          posEl.classList.add('drag-over');
+          dragState.elementoSobre = posEl;
+      }
+  }
+
+  function soltarArrastre(e) {
+      if (dragState.pIndexOrigen === null) return;
+
+      clearTimeout(dragState.timerPresion);
+
+      if (dragState.activo) {
+          dragState.elementoOrigen.classList.remove('arrastrando');
+          if (dragState.elementoSobre) {
+              dragState.elementoSobre.classList.remove('drag-over');
+              const pIndexDestino = parseInt(dragState.elementoSobre.dataset.pindex);
+              intercambiarPosiciones(dragState.pIndexOrigen, pIndexDestino);
+          }
+      } else if (!dragState.seMovio) {
+          // Fue un toque/clic corto (sin mantener presionado): abrir o cerrar el detalle
+          const pos = posiciones[dragState.pIndexOrigen];
+          if (pos) {
+              abiertoId = (abiertoId === pos.id) ? null : pos.id;
+              renderPatio();
+          }
+      }
+
+      resetDragState();
+  }
+
+  function resetDragState() {
+      dragState.pointerId = null;
+      dragState.pIndexOrigen = null;
+      dragState.elementoOrigen = null;
+      dragState.elementoSobre = null;
+      dragState.activo = false;
+      dragState.seMovio = false;
+      dragState.timerPresion = null;
+  }
+
+  function intercambiarPosiciones(origen, destino) {
+      if (origen === destino || isNaN(destino)) return;
+      const temp = posiciones[origen];
+      posiciones[origen] = posiciones[destino];
+      posiciones[destino] = temp;
+      db.ref('patio/posiciones').set(posiciones);
+  }
+
+  document.addEventListener('pointermove', moverArrastre);
+  document.addEventListener('pointerup', soltarArrastre);
+  document.addEventListener('pointercancel', soltarArrastre);
+
   function renderPatio() {
       const pCont = document.getElementById('patio');
       const busqueda = document.getElementById('global-search').value.trim().toLowerCase();
       pCont.innerHTML = '';
-      
+
       const basura = document.createElement('div');
-      basura.className = 'obstaculo'; 
+      basura.className = 'obstaculo';
       basura.innerHTML = `<span>CONTENEDOR DE BASURA</span>`;
       pCont.appendChild(basura);
 
@@ -796,10 +948,11 @@
       posiciones.forEach((pos, pIndex) => {
           const div = document.createElement('div');
           let match = false;
-          if(busqueda !== "" && pos.tipo === 'pallet'){ 
-              match = pos.filas.some(f => f.sku.toLowerCase().includes(busqueda)); 
+          if(busqueda !== "" && pos.tipo === 'pallet'){
+              match = pos.filas.some(f => f.sku.toLowerCase().includes(busqueda));
           }
           div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
+          div.dataset.pindex = pIndex;
 
           // Distribución en rejilla: siguiente celda libre en orden, saltando el obstáculo
           const celda = celdas[pIndex];
@@ -818,7 +971,7 @@
           btnCerrar.onclick = (e) => { e.stopPropagation(); eliminarPosicion(pIndex); };
           div.appendChild(btnCerrar);
 
-          div.onclick = () => { abiertoId = (abiertoId === pos.id) ? null : pos.id; renderPatio(); };
+          div.addEventListener('pointerdown', (e) => iniciarPresionCasillero(e, pIndex, div));
           if (abiertoId === pos.id) div.classList.add('abierto');
 
           let detalle = document.createElement('div');
@@ -830,7 +983,7 @@
               const data = pos.tipo === 'pallet' ? pos.filas[n] : pos.filasObjeto[n];
               b.className = `fila-btn ${pos.tipo === 'pallet' ? (data.sku ? 'con-datos' : '') : (data.tipo ? 'objeto-datos' : '')}`;
               b.innerText = pos.tipo === 'pallet' ? (data.sku ? `F${n+1}: ${data.sku}` : `Fila ${n+1}`) : (data.tipo ? `N${n+1}: ${data.tipo}` : `Nivel ${n+1}`);
-              
+
               if(modoAdmin) {
                   b.onclick = () => pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
               }
@@ -917,7 +1070,7 @@
   function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
   function cerrarSesion() { location.reload(); }
   function filtrarTodo() { renderPatio(); }
-  
+
   function actualizarTablas() {
       let skus = {}; let tCant = 0; let tLpns = 0; let detalleHtml = '';
       posiciones.forEach(pos => {
