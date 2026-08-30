@@ -108,7 +108,8 @@
     .posicion.arrastrando { opacity: 0.4; cursor: grabbing !important; z-index: 3000; border-color: var(--accent); }
     body:not(.viewer-mode) .posicion { cursor: grab; }
 
-    .patio-grid-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .patio-grid-wrapper { width: 100%; overflow: visible; }
+    .controles { position: relative; z-index: 1; }
 
     #btn-menu-movil {
         display: none; position: fixed; top: 15px; left: 15px; z-index: 3500;
@@ -153,7 +154,7 @@
         grid-column: 12; grid-row: 1 / span 4; background: var(--obstacle); border: 3px solid #222; border-radius: 4px;
         display: flex; justify-content: center; align-items: center; font-weight: bold; color: #888; font-size: 0.6rem; text-align: center;
     }
-    .posicion.abierto { border-color: var(--accent); z-index: 1500; }
+    .posicion.abierto { border-color: var(--accent); z-index: 3000; }
     .posicion.abierto .detalle-pila { display: flex; }
     .nivel-badge { font-size: 1.2rem; font-weight: bold; color: var(--accent); pointer-events: none; }
     .id-piso { font-size: 0.6rem; opacity: 0.7; position: absolute; top: 2px; left: 2px; pointer-events: none; }
@@ -162,8 +163,8 @@
     .posicion.es-objeto .nivel-badge { display: none; }
 
     .detalle-pila {
-        display: none; position: absolute; bottom: 115%; left: -50px; width: 170px; background: #333;
-        border-radius: 8px; padding: 10px; z-index: 2500; border: 1px solid var(--accent); flex-direction: column-reverse; gap: 5px;
+        display: none; position: absolute; top: 115%; left: -50px; width: 170px; background: #333;
+        border-radius: 8px; padding: 10px; z-index: 3500; border: 1px solid var(--accent); flex-direction: column-reverse; gap: 5px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
     .fila-btn {
@@ -358,6 +359,7 @@
     <h2 style="text-align: center;">Mapa Logístico de Patio</h2>
     <div class="controles view-only-hidden" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
       <button class="btn-login" style="width:auto; margin-top:0; padding:10px 20px;" onclick="agregarPosicion()">+ Añadir Espacio</button>
+      <button class="btn-login" style="width:auto; margin-top:0; padding:10px 20px; background:var(--danger);" onclick="reiniciarPatio()">🔄 Reiniciar Datos</button>
       <div class="excel-btn-container">
         <label for="cargar-excel-file">📊 Cargar Excel (.csv)</label>
         <input type="file" id="cargar-excel-file" accept=".csv">
@@ -416,7 +418,8 @@
       <div class="consumo-card">
         <div class="form-group">
           <label>Código o LPN a dar de baja</label>
-          <input type="text" id="con_lpn" placeholder="Escanee o escriba el LPN..." oninput="autoBuscarLpnEnPatio(this.value)">
+          <input type="text" id="con_lpn" class="has-btn" placeholder="Escanee o escriba el LPN..." oninput="autoBuscarLpnEnPatio(this.value)">
+          <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara('consumo')">📷 Cámara</button>
         </div>
         <div class="form-group">
           <label>SKU Vinculado (Lectura)</label>
@@ -469,7 +472,7 @@
   <h3>Info Pallet</h3>
   <div class="form-group">
     <label>LPN</label>
-    <input type="text" id="lpn_num" class="has-btn">
+    <input type="text" id="lpn_num" class="has-btn" oninput="autoLlenarDesdeExcel(this.value)">
     <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara('mapa')">📷 Cámara</button>
   </div>
   <div class="form-group"><label>SKU</label><input type="text" id="sku"></div>
@@ -518,6 +521,7 @@
 
   let modoAdmin = false;
   let html5QrcodeScanner = null;
+  let contextoEscaneo = null;
   let abiertoId = null;
   let posiciones = [];
   let baseDatosExcel = {};
@@ -759,8 +763,18 @@
               }
           }
           document.getElementById('excel-status').innerText = `✅ ${total} LPNs listos.`;
+          db.ref('patio/excel_datos').set(baseDatosExcel);
       };
       lector.readAsText(archivo, 'UTF-8');
+  });
+
+  // Cargar la base de datos del Excel guardada en Firebase (persiste entre recargas y dispositivos)
+  db.ref('patio/excel_datos').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+          baseDatosExcel = data;
+          document.getElementById('excel-status').innerText = `✅ ${Object.keys(data).length} LPNs listos.`;
+      }
   });
 
   // ===== NUEVO: cálculo de celdas disponibles sin huecos, respetando el obstáculo =====
@@ -834,7 +848,6 @@
 
   // ===== NUEVO: sistema de arrastre por presión sostenida (mouse click-sostenido y táctil en celular) =====
   function iniciarPresionCasillero(e, pIndex, div) {
-      if (!modoAdmin) return;
       if (e.target.closest('.btn-cerrar, .fila-btn, .btn-objeto-trigger, .detalle-pila')) return;
       if (e.button !== undefined && e.button !== 0) return; // solo botón izquierdo del mouse
 
@@ -847,7 +860,11 @@
       dragState.elementoOrigen = div;
       dragState.elementoSobre = null;
 
-      dragState.timerPresion = setTimeout(activarArrastre, 350);
+      // El arrastre (mantener presionado para mover) es solo para el Administrador.
+      // Un toque corto siempre abre/cierra el detalle, tanto para Admin como para Visor.
+      if (modoAdmin) {
+          dragState.timerPresion = setTimeout(activarArrastre, 350);
+      }
   }
 
   function activarArrastre() {
@@ -857,19 +874,7 @@
   }
 
   function moverArrastre(e) {
-      if (dragState.pIndexOrigen === null) return;
-
-      const dx = Math.abs(e.clientX - dragState.startX);
-      const dy = Math.abs(e.clientY - dragState.startY);
-
-      if (!dragState.activo) {
-          // Si se mueve antes de que se active el arrastre (ej: está haciendo scroll), se cancela
-          if (dx > 10 || dy > 10) {
-              clearTimeout(dragState.timerPresion);
-              resetDragState();
-          }
-          return;
-      }
+      if (dragState.pIndexOrigen === null || !dragState.activo) return;
 
       e.preventDefault();
       dragState.seMovio = true;
@@ -932,6 +937,43 @@
   document.addEventListener('pointermove', moverArrastre);
   document.addEventListener('pointerup', soltarArrastre);
   document.addEventListener('pointercancel', soltarArrastre);
+
+  // ===== NUEVO: reiniciar datos del patio (mantiene el mapa/posiciones, borra contenido y el Excel cargado) =====
+  function reiniciarPatio() {
+      if (!modoAdmin) return;
+
+      const confirmacion1 = confirm(
+          "⚠️ REINICIAR DATOS DEL PATIO\n\n" +
+          "Esto va a borrar TODO el contenido (SKU, LPN, cantidad, tono, observación) de TODOS los casilleros.\n" +
+          "El mapa y la cantidad de casilleros se mantienen igual, solo quedan vacíos.\n" +
+          "También se borrará el Excel cargado.\n\n" +
+          "¿Deseas continuar?"
+      );
+      if (!confirmacion1) return;
+
+      const verificacion = prompt('Para confirmar, escribe la palabra REINICIAR (en mayúsculas):');
+      if (verificacion !== "REINICIAR") {
+          alert("Reinicio cancelado. El texto no coincidió.");
+          return;
+      }
+
+      posiciones.forEach(pos => {
+          if (pos.tipo === 'pallet') {
+              pos.filas = Array.from({ length: 5 }, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }));
+          } else if (pos.tipo === 'objeto') {
+              pos.filasObjeto = Array.from({ length: 5 }, () => ({ tipo: "", cant: 0 }));
+          }
+      });
+
+      abiertoId = null;
+
+      db.ref('patio/posiciones').set(posiciones);
+      db.ref('patio/excel_datos').remove();
+      baseDatosExcel = {};
+      document.getElementById('excel-status').innerText = '';
+
+      alert("✅ Datos del patio reiniciados. El mapa quedó vacío, listo para volver a cargar.");
+  }
 
   function renderPatio() {
       const pCont = document.getElementById('patio');
@@ -1002,6 +1044,7 @@
           div.appendChild(detalle);
           pCont.appendChild(div);
       });
+
       actualizarTablas();
   }
 
@@ -1055,6 +1098,19 @@
       document.getElementById('modalDatos').style.display = 'flex';
   }
 
+  // ===== NUEVO: autocompletar SKU, Descripción y Cantidad desde el Excel cargado, al asignar el LPN a un casillero =====
+  function autoLlenarDesdeExcel(valorLpn) {
+      const lpnLimpio = valorLpn.trim();
+      if (!lpnLimpio) return;
+
+      const datos = baseDatosExcel[lpnLimpio];
+      if (datos) {
+          document.getElementById('sku').value = datos.sku || "";
+          document.getElementById('descripcion').value = datos.desc || "";
+          document.getElementById('cantidad').value = datos.cant || 0;
+      }
+  }
+
   function guardarDatos() {
       const { pIndex, nIndex } = editandoContexto;
       const f = posiciones[pIndex].filas[nIndex];
@@ -1070,6 +1126,45 @@
   function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
   function cerrarSesion() { location.reload(); }
   function filtrarTodo() { renderPatio(); }
+
+  // ===== NUEVO: escáner de cámara con html5-qrcode =====
+  function activarPistolaCamara(destino) {
+      contextoEscaneo = destino;
+      document.getElementById('modalCamara').style.display = 'flex';
+
+      html5QrcodeScanner = new Html5Qrcode("lector-camara-contenedor");
+      html5QrcodeScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 150 } },
+          (codigoDecodificado) => manejarCodigoEscaneado(codigoDecodificado),
+          () => { /* ignorar cuadros sin código detectado */ }
+      ).catch((err) => {
+          alert("No se pudo acceder a la cámara. Revisa los permisos del navegador.\n" + err);
+          cerrarEscaneoCamara();
+      });
+  }
+
+  function manejarCodigoEscaneado(codigo) {
+      if (contextoEscaneo === 'mapa') {
+          document.getElementById('lpn_num').value = codigo;
+          autoLlenarDesdeExcel(codigo);
+      } else if (contextoEscaneo === 'consumo') {
+          document.getElementById('con_lpn').value = codigo;
+          autoBuscarLpnEnPatio(codigo);
+      }
+      if (navigator.vibrate) navigator.vibrate(80);
+      cerrarEscaneoCamara();
+  }
+
+  function cerrarEscaneoCamara() {
+      if (html5QrcodeScanner) {
+          html5QrcodeScanner.stop()
+              .then(() => html5QrcodeScanner.clear())
+              .catch(() => {})
+              .finally(() => { html5QrcodeScanner = null; });
+      }
+      document.getElementById('modalCamara').style.display = 'none';
+  }
 
   function actualizarTablas() {
       let skus = {}; let tCant = 0; let tLpns = 0; let detalleHtml = '';
