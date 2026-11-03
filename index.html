@@ -53,6 +53,7 @@
     }
     .btn-login { background: var(--accent); width: 100%; margin-top: 15px; border:none; padding:12px; color:white; font-weight:bold; cursor:pointer; border-radius:6px; }
 
+    input, textarea { user-select: text; -webkit-user-select: text; }
     .view-only-hidden { display: block; }
     body.viewer-mode .view-only-hidden { display: none !important; }
     body.viewer-mode .posicion { cursor: default !important; }
@@ -133,6 +134,55 @@
         .obstaculo { font-size: 0.5rem; }
         .modal-content { max-width: 92%; }
     }
+
+    @media (min-width: 769px) and (max-width: 1100px) {
+        .sidebar { width: 200px; }
+        .main-content { margin-left: 200px; }
+        .patio-grid { grid-template-columns: repeat(15, 48px); grid-auto-rows: 48px; gap: 8px; }
+        .posicion { width: 48px; height: 48px; }
+        .grid-tablas { grid-template-columns: 1fr; }
+        .consumo-wrapper { grid-template-columns: 1fr; }
+    }
+    /* Visor de cámara */
+    #modalCamara { align-items: flex-start; }
+    .cam-content { max-width: 520px; width: 96%; margin: 8px auto; padding: 14px; }
+    .cam-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .cam-x { background: #444; color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; }
+    #lector-camara-contenedor.cam-ok { border: 3px solid var(--success); box-shadow: 0 0 18px var(--success); }
+    .cam-status { font-size: 0.8rem; text-align: center; margin: -5px 0 10px; min-height: 1.2em; }
+    .cam-controles { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .cam-btn { flex: 1; background: #34495e; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .cam-btn.activo { background: #f1c40f; color: #000; }
+    .cam-zoom { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .cam-zoom input { flex: 1; }
+    .cam-manual { display: flex; gap: 8px; margin-bottom: 10px; }
+    .cam-manual input { flex: 2; min-width: 0; background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 6px; }
+
+    /* Mover filas */
+    .fila-btn { touch-action: none; -webkit-touch-callout: none; }
+    .fila-btn.arrastrando-fila { opacity: 0.45; outline: 2px solid var(--accent); }
+    .fila-btn.fila-over { background: #1f6f9f; border-color: var(--accent); }
+
+    /* Validación de patio vs Excel */
+    .validacion-card { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; background: var(--card); border: 1px solid #444; border-radius: 10px; padding: 12px 15px; margin: 0 auto 15px; max-width: 900px; }
+    .val-info { flex: 1; min-width: 220px; font-size: 0.85rem; }
+    .val-barra { height: 8px; background: #111; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+    #val-barra-fill { height: 100%; width: 0; background: var(--pallet); transition: width 0.3s, background 0.3s; }
+    .val-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 15px; }
+    .val-card { background: #1e1e1e; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.75rem; color: #aaa; }
+    .val-card b { display: block; font-size: 1.3rem; color: #fff; margin-top: 3px; }
+    .val-scroll { max-height: 260px; overflow: auto; border: 1px solid #333; border-radius: 8px; margin-bottom: 10px; }
+    .val-acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
+    .val-acciones button { flex: 1; min-width: 120px; border: none; color: white; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Avisos */
+    #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9600; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: 92%; max-width: 440px; }
+    .toast { background: #333; color: #fff; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem; border-left: 4px solid var(--accent); box-shadow: 0 6px 20px rgba(0,0,0,0.5); transition: opacity 0.3s; text-align: center; }
+    .toast.ok { border-left-color: var(--success); }
+    .toast.warn { border-left-color: var(--pallet); }
+    .toast.error { border-left-color: var(--danger); }
+    .toast.out { opacity: 0; }
 
     .encontrado { animation: parpadeo-busqueda 1s infinite; z-index: 10; }
     @keyframes parpadeo-busqueda {
@@ -232,7 +282,7 @@
 
     #lector-camara-contenedor {
         width: 100%;
-        height: 250px;
+        min-height: 220px;
         background: #111;
         border-radius: 8px;
         overflow: hidden;
@@ -326,24 +376,26 @@
 <div id="login-overlay">
   <div class="login-box">
     <h2>Acceso PatioPro</h2>
-    <input type="text" id="user-in" placeholder="Usuario">
-    <input type="password" id="pass-in" placeholder="Contraseña">
-    <button class="btn-login" onclick="iniciarSesion()">Ingresar</button>
+    <input type="email" id="user-in" placeholder="Correo electrónico" autocomplete="username" autocapitalize="off">
+    <input type="password" id="pass-in" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') iniciarSesion()">
+    <div id="login-msg" style="min-height:1.2em; font-size:0.8rem; margin-top:8px; color:#bbb;">Verificando sesión…</div>
+    <button id="btn-ingresar" class="btn-login" onclick="iniciarSesion()">Ingresar</button>
+    <div style="margin-top:12px; font-size:0.78rem;"><a href="#" onclick="recuperarContrasena(); return false;" style="color:var(--accent);">¿Olvidaste tu contraseña?</a></div>
   </div>
 </div>
 
 <div class="sidebar">
   <div class="sidebar-header"><span>📦 PatioPro</span></div>
   <div class="sidebar-user">
-    <div class="user-avatar">R</div>
+    <div class="user-avatar" id="user-avatar">R</div>
     <div>
-      <div id="current-username" style="font-weight: bold;">Cargando...</div>
+      <div id="current-username" style="font-weight: bold; font-size: 0.85rem; word-break: break-all;">Cargando...</div>
       <div id="current-role" style="font-size: 0.7rem; color: #888;">Rol</div>
     </div>
   </div>
   <div class="sidebar-menu">
-    <div class="menu-item active" id="menu-mapa" onclick="mostrarSeccion('mapa-seccion')">🏠 Mapa de Patio</div>
-    <div class="menu-item" id="menu-activos" onclick="mostrarSeccion('activos-seccion')">⚙️ Objetos y Activos</div>
+    <div class="menu-item active" id="menu-mapa" onclick="mostrarSeccion('menu-mapa')">🏠 Mapa de Patio</div>
+    <div class="menu-item" id="menu-activos" onclick="mostrarSeccion('menu-activos')">⚙️ Objetos y Activos</div>
     <div class="menu-item" id="menu-consumo" onclick="mostrarSeccion('menu-consumo')">📉 LPN a Consumir</div>
     <div class="menu-item" style="color: var(--danger);" onclick="cerrarSesion()">🚪 Salir</div>
   </div>
@@ -351,7 +403,7 @@
 
 <div class="main-content">
   <div class="search-container">
-    <input type="text" id="global-search" class="search-input" placeholder="🔍 Buscar SKU..." oninput="filtrarTodo()">
+    <input type="text" id="global-search" class="search-input" placeholder="🔍 Buscar SKU o LPN..." oninput="filtrarTodo()">
   </div>
 
   <!-- SECCIÓN 1: MAPA -->
@@ -365,7 +417,17 @@
         <input type="file" id="cargar-excel-file" accept=".csv">
       </div>
       <span id="excel-status"></span>
+      <div style="width:100%; font-size:0.72rem; color:#888;">💡 Mantén presionado un casillero para moverlo. Mantén presionada una fila (dentro del casillero abierto) para cambiarla de lugar o llevarla a otro casillero.</div>
     </div>
+
+    <div class="validacion-card">
+      <div class="val-info">
+        <div id="val-texto">Carga el Excel para validar lo que falta pistolear.</div>
+        <div class="val-barra"><div id="val-barra-fill"></div></div>
+      </div>
+      <button id="btn-validar" class="btn-login" style="width:auto; margin-top:0; padding:10px 20px; background:var(--success);" onclick="abrirValidacion()" disabled>✅ Validar faltantes</button>
+    </div>
+
     <div class="patio-grid-wrapper">
       <div class="patio-grid" id="patio"></div>
     </div>
@@ -462,10 +524,62 @@
 </div>
 
 <!-- Modales -->
-<div id="modalCamara" class="modal"><div class="modal-content">
-  <h3>Escanear Código LPN</h3>
+<div id="modalCamara" class="modal"><div class="modal-content cam-content">
+  <div class="cam-header">
+    <h3 id="cam-titulo" style="margin:0;">Escanear Código LPN</h3>
+    <button class="cam-x" onclick="cerrarEscaneoCamara()" aria-label="Cerrar">✕</button>
+  </div>
   <div id="lector-camara-contenedor"></div>
+  <div id="cam-status" class="cam-status">Iniciando cámara…</div>
+  <div class="cam-controles">
+    <button id="btn-linterna" class="cam-btn" style="display:none;" onclick="alternarLinterna()">🔦 Linterna</button>
+    <button id="btn-cambiar-camara" class="cam-btn" onclick="cambiarCamara()">🔄 Cambiar cámara</button>
+  </div>
+  <div id="cam-zoom-wrap" class="cam-zoom" style="display:none;">
+    <span>🔍</span>
+    <input type="range" id="cam-zoom" min="1" max="3" step="0.1" value="1" oninput="aplicarZoom(this.value)">
+  </div>
+  <div class="cam-manual">
+    <input type="text" id="cam-manual-input" placeholder="¿No lee? Escribe el código…" onkeydown="if(event.key==='Enter') usarCodigoManual()">
+    <button class="cam-btn" style="flex:1;" onclick="usarCodigoManual()">Usar</button>
+  </div>
   <button onclick="cerrarEscaneoCamara()" style="background:#555; width:100%; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancelar</button>
+</div></div>
+
+<div id="modalValidacion" class="modal"><div class="modal-content" style="max-width:760px; max-height:92vh; overflow-y:auto; margin:auto;">
+  <h3 style="margin-top:0; color:var(--accent);">✅ Validación de Patio vs Excel</h3>
+  <div class="val-cards" id="val-resumen"></div>
+
+  <div class="titulo-tabla orange-t">LPN del Excel que faltó pistolear (ya no están en patio)</div>
+  <div class="val-scroll">
+    <table class="tabla-estilizada">
+      <thead><tr><th>LPN</th><th>SKU</th><th>Descripción</th><th style="text-align:right">Cant.</th></tr></thead>
+      <tbody id="val-faltantes"></tbody>
+    </table>
+  </div>
+
+  <div class="titulo-tabla green-t">Faltantes consolidados por SKU</div>
+  <div class="val-scroll">
+    <table class="tabla-estilizada">
+      <thead><tr><th>SKU</th><th style="text-align:right">LPNs</th><th style="text-align:right">Unidades</th></tr></thead>
+      <tbody id="val-consolidado"></tbody>
+    </table>
+  </div>
+
+  <div class="titulo-tabla blue-t">En patio pero NO están en el Excel</div>
+  <div class="val-scroll">
+    <table class="tabla-estilizada">
+      <thead><tr><th>LPN</th><th>SKU</th><th>Ubicación</th><th style="text-align:right">Cant.</th></tr></thead>
+      <tbody id="val-sobrantes"></tbody>
+    </table>
+  </div>
+
+  <div class="val-acciones">
+    <button style="background:#27ae60;" onclick="exportarFaltantesCSV()">⬇️ Exportar CSV</button>
+    <button style="background:#2980b9;" onclick="copiarFaltantes()">📋 Copiar</button>
+    <button class="view-only-hidden" style="background:var(--accent);" onclick="guardarCierreValidacion()">💾 Guardar cierre</button>
+    <button style="background:#555;" onclick="cerrarModal('modalValidacion')">Cerrar</button>
+  </div>
 </div></div>
 
 <div id="modalDatos" class="modal"><div class="modal-content">
@@ -474,6 +588,7 @@
     <label>LPN</label>
     <input type="text" id="lpn_num" class="has-btn" oninput="autoLlenarDesdeExcel(this.value)">
     <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara('mapa')">📷 Cámara</button>
+    <small id="lpn-hint" style="display:block; margin-top:4px; font-size:0.72rem; min-height:1em;"></small>
   </div>
   <div class="form-group"><label>SKU</label><input type="text" id="sku"></div>
   <div class="form-group"><label>Descripción</label><input type="text" id="descripcion"></div>
@@ -502,8 +617,9 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8"></script>
 
 <script>
   const firebaseConfig = {
@@ -518,6 +634,11 @@
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
+  const auth = firebase.auth();
+
+  // Las lecturas a Firebase solo se activan DESPUÉS de iniciar sesión (las reglas exigen usuario autenticado)
+  const escuchasPendientes = [];
+  function alAutenticar(fn) { escuchasPendientes.push(fn); }
 
   let modoAdmin = false;
   let html5QrcodeScanner = null;
@@ -542,18 +663,41 @@
       seMovio: false
   };
 
+  function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  let _t = null;
+  function debounce(fn, ms) { return (...a) => { clearTimeout(_t); _t = setTimeout(() => fn(...a), ms); }; }
+  const datosListos = { pos: false, excel: false };
+  let prevFaltantes = null;
+  let ultimaValidacion = null;
+
+  function toast(msg, tipo = 'info', ms = 3000) {
+      let c = document.getElementById('toast-container');
+      if (!c) { c = document.createElement('div'); c.id = 'toast-container'; document.body.appendChild(c); }
+      const t = document.createElement('div');
+      t.className = 'toast ' + tipo;
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, ms);
+  }
+
+  const filaVacia = () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" });
+
   function alternarMenuMovil() {
       document.querySelector('.sidebar').classList.toggle('abierto');
   }
 
   // Escuchar Cambios en Posiciones
-  db.ref('patio/posiciones').on('value', (snapshot) => {
+  alAutenticar(() => db.ref('patio/posiciones').on('value', (snapshot) => {
       const data = snapshot.val();
-      if (data) { posiciones = data; renderPatio(); }
-  });
+      posiciones = data ? (Array.isArray(data) ? data.filter(Boolean) : Object.values(data)) : [];
+      datosListos.pos = true;
+      renderPatio();
+  }));
 
   // Escuchar Cambios en el Historial de Bajas / Consumos
-  db.ref('patio/historial_bajas').on('value', (snapshot) => {
+  alAutenticar(() => db.ref('patio/historial_bajas').limitToLast(50).on('value', (snapshot) => {
       const listaContenedor = document.getElementById('registro-bajas-lista');
       listaContenedor.innerHTML = "";
       const data = snapshot.val();
@@ -563,23 +707,29 @@
           return;
       }
 
-      Object.values(data).reverse().forEach(item => {
+      Object.values(data).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).forEach(item => {
           const div = document.createElement('div');
           div.className = "item-baja";
 
-          let imgTag = item.foto ? `<img src="${item.foto}" class="item-baja-img" onclick="ampliarImagen('${item.foto}')">` : `<div class="item-baja-img" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🚫</div>`;
+          const fecha = item.timestamp ? new Date(item.timestamp).toLocaleString('es-PE') : '';
+          const fotoOk = typeof item.foto === 'string' && item.foto.startsWith('data:image/');
+          const imgTag = fotoOk
+              ? `<img src="${item.foto}" class="item-baja-img" alt="Evidencia">`
+              : `<div class="item-baja-img" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🚫</div>`;
 
           div.innerHTML = `
               ${imgTag}
               <div class="item-baja-info">
-                  <div><strong>LPN:</strong> ${item.lpn} | <strong>SKU:</strong> ${item.sku}</div>
-                  <div><strong>Cant:</strong> ${item.cant} uds. | <strong>Ubicación:</strong> ${item.ubicacion}</div>
-                  <div style="color:#aaa; font-size:0.75rem; margin-top:3px;"><strong>Obs:</strong> ${item.observacion || 'Sin observaciones'}</div>
+                  <div><strong>LPN:</strong> ${esc(item.lpn)} | <strong>SKU:</strong> ${esc(item.sku)}</div>
+                  <div><strong>Cant:</strong> ${esc(item.cant)} uds. | <strong>Ubicación:</strong> ${esc(item.ubicacion)}</div>
+                  <div style="color:#aaa; font-size:0.75rem; margin-top:3px;"><strong>Obs:</strong> ${esc(item.observacion || 'Sin observaciones')}</div>
+                  ${fecha ? `<div style="color:#777; font-size:0.7rem; margin-top:2px;">${esc(fecha)}</div>` : ''}
               </div>
           `;
+          if (fotoOk) div.querySelector('img').addEventListener('click', () => ampliarImagen(item.foto));
           listaContenedor.appendChild(div);
       });
-  });
+  }));
 
   function autoBuscarLpnEnPatio(valorLpn) {
       const lpnLimpio = valorLpn.trim();
@@ -587,7 +737,7 @@
 
       let encontrado = false;
       posiciones.forEach((pos) => {
-          if (pos.tipo === 'pallet') {
+          if (pos.tipo === 'pallet' && pos.filas) {
               pos.filas.forEach((fila, idx) => {
                   if (fila.lpn === lpnLimpio) {
                       document.getElementById('con_sku').value = fila.sku || "Sin SKU";
@@ -634,7 +784,9 @@
       }
   }
 
+  let bajaEnCurso = false;
   function ejecutarBajaConsumo() {
+      if (!modoAdmin || bajaEnCurso) return;
       const lpn = document.getElementById('con_lpn').value.trim();
       const sku = document.getElementById('con_sku').value;
       const cant = document.getElementById('con_cant').value;
@@ -642,17 +794,21 @@
       const obs = document.getElementById('con_obs').value.trim();
 
       if (!lpn) return alert("Por favor inserte un LPN.");
-      if (!fotoBase64Global) return alert("Es obligatorio capturar una fotografía como evidencia física.");
+      if (!fotoBase64Global) return alert("Es obligatorio capturar una fotografía como evidencia física (espera a que cargue la vista previa).");
+      if (document.getElementById('con_ubicacion').value === "Desconocida") {
+          if (!confirm("Este LPN no está en el mapa del patio. ¿Registrar la baja de todos modos?")) return;
+      }
+      bajaEnCurso = true;
 
       let posIndexAfectado = null;
       let modificado = false;
 
       // Borrar físicamente del mapa logístico en tiempo real
       posiciones.forEach((pos, pIdx) => {
-          if (pos.tipo === 'pallet') {
+          if (pos.tipo === 'pallet' && pos.filas) {
               pos.filas.forEach((fila, fIdx) => {
                   if (fila.lpn === lpn) {
-                      posiciones[pIdx].filas[fIdx] = { lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" };
+                      posiciones[pIdx].filas[fIdx] = filaVacia();
                       modificado = true;
                       posIndexAfectado = pIdx;
                   }
@@ -678,7 +834,9 @@
           }
           alert(`✅ Consumo guardado e historial actualizado con fotografía para el LPN: ${lpn}`);
           limpiarFormularioConsumo();
-      });
+      }).catch(err => {
+          alert("No se pudo guardar la baja. Revisa tu conexión e inténtalo de nuevo.\n" + err.message);
+      }).finally(() => { bajaEnCurso = false; });
   }
 
   function ampliarImagen(src) {
@@ -701,25 +859,93 @@
       document.getElementById('con_ubicacion').value = '';
   }
 
-  function iniciarSesion() {
-      const u = document.getElementById('user-in').value;
-      const p = document.getElementById('pass-in').value;
-      if(u === "recepciontarapoto" && p === "Hpsa2028@") {
-          modoAdmin = true;
-          document.body.classList.remove('viewer-mode');
-          document.getElementById('current-username').innerText = "Recepcion";
-          document.getElementById('current-role').innerText = "Administrador";
-          document.getElementById('login-overlay').style.display = 'none';
-          renderPatio();
-      } else if (u === "visor" && p === "visor123") {
-          modoAdmin = false;
-          document.body.classList.add('viewer-mode');
-          document.getElementById('current-username').innerText = "Visor General";
-          document.getElementById('current-role').innerText = "Modo Solo Lectura";
-          document.getElementById('login-overlay').style.display = 'none';
-          renderPatio();
-      } else { alert("Error de acceso"); }
+  // ===== Autenticación con Firebase (correo + contraseña) y roles =====
+  // El rol vive en la base de datos: roles/<uid> = "admin" | "viewer" (solo editable desde la consola de Firebase)
+  let sesionActiva = false;
+
+  function setLoginMsg(msg, color) {
+      const el = document.getElementById('login-msg');
+      el.textContent = msg || '';
+      el.style.color = color || '#e74c3c';
   }
+
+  function mensajeAuth(e) {
+      switch (e && e.code) {
+          case 'auth/invalid-email': return 'El correo no tiene un formato válido.';
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+          case 'auth/invalid-login-credentials': return 'Correo o contraseña incorrectos.';
+          case 'auth/user-disabled': return 'Este usuario fue deshabilitado.';
+          case 'auth/too-many-requests': return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+          case 'auth/network-request-failed': return 'Sin conexión. Revisa tu internet.';
+          default: return 'No se pudo iniciar sesión. (' + ((e && e.code) || 'error') + ')';
+      }
+  }
+
+  async function iniciarSesion() {
+      const email = document.getElementById('user-in').value.trim();
+      const pass = document.getElementById('pass-in').value;
+      if (!email || !pass) return setLoginMsg('Ingresa tu correo y contraseña.');
+      const btn = document.getElementById('btn-ingresar');
+      btn.disabled = true;
+      setLoginMsg('Ingresando…', '#bbb');
+      try {
+          await auth.signInWithEmailAndPassword(email, pass);
+          // el resto lo resuelve onAuthStateChanged
+      } catch (e) {
+          setLoginMsg(mensajeAuth(e));
+      } finally {
+          btn.disabled = false;
+      }
+  }
+
+  async function recuperarContrasena() {
+      const email = document.getElementById('user-in').value.trim();
+      if (!email) return setLoginMsg('Escribe tu correo arriba y vuelve a tocar "¿Olvidaste tu contraseña?".', '#e67e22');
+      try {
+          await auth.sendPasswordResetEmail(email);
+          setLoginMsg('Te enviamos un correo para restablecer la contraseña.', '#2ecc71');
+      } catch (e) {
+          setLoginMsg(mensajeAuth(e));
+      }
+  }
+
+  function aplicarSesion(rol, user) {
+      if (sesionActiva) return;
+      sesionActiva = true;
+      modoAdmin = (rol === 'admin');
+      document.body.classList.toggle('viewer-mode', !modoAdmin);
+      document.getElementById('current-username').innerText = user.email || 'Usuario';
+      document.getElementById('current-role').innerText = modoAdmin ? 'Administrador' : 'Modo Solo Lectura';
+      document.getElementById('user-avatar').innerText = (user.email || 'U').charAt(0).toUpperCase();
+      document.getElementById('pass-in').value = '';
+      document.getElementById('login-overlay').style.display = 'none';
+      escuchasPendientes.forEach(fn => fn());
+      renderPatio();
+  }
+
+  auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+          sesionActiva = false;
+          document.getElementById('login-overlay').style.display = 'flex';
+          setLoginMsg('');
+          return;
+      }
+      try {
+          const snap = await db.ref('roles/' + user.uid).once('value');
+          const rol = snap.val();
+          if (rol !== 'admin' && rol !== 'viewer') {
+              await auth.signOut();
+              setLoginMsg('Tu usuario no tiene un rol asignado. Pide acceso al administrador.');
+              return;
+          }
+          aplicarSesion(rol, user);
+      } catch (e) {
+          await auth.signOut();
+          setLoginMsg('No se pudo verificar tu acceso. Revisa tu conexión e inténtalo de nuevo.');
+      }
+  });
 
   function mostrarSeccion(id) {
       document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
@@ -734,6 +960,18 @@
       document.querySelector('.sidebar').classList.remove('abierto');
   }
 
+  function parsearLineaCSV(linea, sep) {
+      const out = []; let cur = ''; let q = false;
+      for (let i = 0; i < linea.length; i++) {
+          const ch = linea[i];
+          if (ch === '"') { if (q && linea[i+1] === '"') { cur += '"'; i++; } else q = !q; }
+          else if (ch === sep && !q) { out.push(cur.trim()); cur = ''; }
+          else cur += ch;
+      }
+      out.push(cur.trim());
+      return out;
+  }
+
   // Lector de CSV Maestro
   document.getElementById('cargar-excel-file').addEventListener('change', function(e) {
       const archivo = e.target.files[0];
@@ -744,7 +982,7 @@
           const lineas = contenido.split(/\r?\n/);
           if (lineas.length < 2) return;
           const sep = lineas[0].includes(';') ? ';' : ',';
-          const columnas = lineas[0].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+          const columnas = parsearLineaCSV(lineas[0].replace(/^\uFEFF/, ''), sep);
           const idxLpn = columnas.indexOf('Número de LPN');
           const idxSku = columnas.indexOf('SKU');
           const idxDesc = columnas.indexOf('Descripción de artículo');
@@ -756,8 +994,8 @@
           let total = 0;
           for (let i = 1; i < lineas.length; i++) {
               if (!lineas[i].trim()) continue;
-              const celdas = lineas[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
-              if (celdas[idxLpn]) {
+              const celdas = parsearLineaCSV(lineas[i], sep);
+              if (celdas[idxLpn] && !/[.#$\[\]\/]/.test(celdas[idxLpn])) {
                   baseDatosExcel[celdas[idxLpn]] = { sku: celdas[idxSku] || "", desc: celdas[idxDesc] || "", cant: parseInt(celdas[idxCant]) || 0 };
                   total++;
               }
@@ -769,13 +1007,13 @@
   });
 
   // Cargar la base de datos del Excel guardada en Firebase (persiste entre recargas y dispositivos)
-  db.ref('patio/excel_datos').on('value', (snapshot) => {
+  alAutenticar(() => db.ref('patio/excel_datos').on('value', (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-          baseDatosExcel = data;
-          document.getElementById('excel-status').innerText = `✅ ${Object.keys(data).length} LPNs listos.`;
-      }
-  });
+      baseDatosExcel = data || {};
+      datosListos.excel = true;
+      document.getElementById('excel-status').innerText = data ? `✅ ${Object.keys(data).length} LPNs listos.` : '';
+      actualizarValidacion();
+  }));
 
   // ===== NUEVO: cálculo de celdas disponibles sin huecos, respetando el obstáculo =====
   // El obstáculo bloquea TODO el ancho a su derecha (columnas 12 a 15) durante sus filas,
@@ -816,7 +1054,7 @@
       const nuevaPosicion = {
           id: nuevoId,
           tipo: 'pallet',
-          filas: Array.from({ length: 5 }, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }))
+          filas: Array.from({ length: 5 }, filaVacia)
       };
 
       posiciones.push(nuevaPosicion);
@@ -839,7 +1077,7 @@
           const tieneDatos = pos.filasObjeto && pos.filasObjeto.some(f => f.tipo);
           if (tieneDatos && !confirm(`El espacio "${pos.id}" tiene objetos cargados. Al convertirlo a Pallet se perderán. ¿Continuar?`)) return;
           pos.tipo = 'pallet';
-          pos.filas = Array.from({ length: 5 }, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }));
+          pos.filas = Array.from({ length: 5 }, filaVacia);
           delete pos.filasObjeto;
       }
 
@@ -938,6 +1176,115 @@
   document.addEventListener('pointerup', soltarArrastre);
   document.addEventListener('pointercancel', soltarArrastre);
 
+  // ===== Mover filas: reordenar dentro del casillero o llevarlas a otro casillero =====
+  const filaDrag = { pIndex: null, nIndex: null, el: null, activo: false, seMovio: false, timer: null, startX: 0, startY: 0, sobre: null, destino: null, ultimoArrastre: 0 };
+
+  function iniciarPresionFila(e, pIndex, nIndex, el) {
+      if (!modoAdmin) return;
+      if (e.button !== undefined && e.button !== 0) return;
+      filaDrag.pIndex = pIndex; filaDrag.nIndex = nIndex; filaDrag.el = el;
+      filaDrag.startX = e.clientX; filaDrag.startY = e.clientY;
+      filaDrag.activo = false; filaDrag.seMovio = false; filaDrag.destino = null; filaDrag.sobre = null;
+      filaDrag.timer = setTimeout(() => {
+          filaDrag.activo = true;
+          el.classList.add('arrastrando-fila');
+          if (navigator.vibrate) navigator.vibrate(30);
+      }, 350);
+  }
+
+  function limpiarResaltadoFila() {
+      if (filaDrag.sobre) filaDrag.sobre.classList.remove('fila-over', 'drag-over');
+      filaDrag.sobre = null; filaDrag.destino = null;
+  }
+
+  function moverArrastreFila(e) {
+      if (filaDrag.pIndex === null) return;
+      if (!filaDrag.activo) {
+          // si se mueve antes de los 350 ms, no es un arrastre
+          if (Math.hypot(e.clientX - filaDrag.startX, e.clientY - filaDrag.startY) > 12) {
+              clearTimeout(filaDrag.timer); resetFilaDrag();
+          }
+          return;
+      }
+      e.preventDefault();
+      filaDrag.seMovio = true;
+      limpiarResaltadoFila();
+
+      const els = document.elementsFromPoint(e.clientX, e.clientY);
+      const filaEl = els.find(x => x !== filaDrag.el && x.classList && x.classList.contains('fila-btn') && x.dataset.fila !== undefined);
+      if (filaEl) {
+          const contenedor = filaEl.closest('.posicion');
+          if (contenedor && parseInt(contenedor.dataset.pindex) === filaDrag.pIndex) {
+              filaEl.classList.add('fila-over');
+              filaDrag.sobre = filaEl;
+              filaDrag.destino = { kind: 'fila', n: parseInt(filaEl.dataset.fila) };
+              return;
+          }
+      }
+      const posEl = els.find(x => x.classList && x.classList.contains('posicion') && parseInt(x.dataset.pindex) !== filaDrag.pIndex);
+      if (posEl) {
+          posEl.classList.add('drag-over');
+          filaDrag.sobre = posEl;
+          filaDrag.destino = { kind: 'pos', pIndex: parseInt(posEl.dataset.pindex) };
+      }
+  }
+
+  function soltarArrastreFila() {
+      if (filaDrag.pIndex === null) return;
+      clearTimeout(filaDrag.timer);
+      if (filaDrag.activo) {
+          filaDrag.el.classList.remove('arrastrando-fila');
+          const destino = filaDrag.destino;
+          limpiarResaltadoFila();
+          if (filaDrag.seMovio) filaDrag.ultimoArrastre = Date.now();
+          if (destino) moverFila(filaDrag.pIndex, filaDrag.nIndex, destino);
+      }
+      resetFilaDrag();
+  }
+
+  function resetFilaDrag() {
+      filaDrag.pIndex = null; filaDrag.nIndex = null; filaDrag.el = null;
+      filaDrag.activo = false; filaDrag.seMovio = false; filaDrag.timer = null;
+      filaDrag.sobre = null; filaDrag.destino = null;
+  }
+
+  function moverFila(pOrig, nOrig, destino) {
+      const orig = posiciones[pOrig];
+      if (!orig) return;
+      const campo = orig.tipo === 'pallet' ? 'filas' : 'filasObjeto';
+      const estaVacia = (f) => orig.tipo === 'pallet' ? (!f.sku && !f.lpn) : !f.tipo;
+      const vacia = () => orig.tipo === 'pallet' ? filaVacia() : { tipo: "", cant: 0 };
+
+      if (!orig[campo] || estaVacia(orig[campo][nOrig])) return toast('Esa fila está vacía, no hay nada que mover.', 'warn');
+
+      if (destino.kind === 'fila') {
+          if (destino.n === nOrig) return;
+          const tmp = orig[campo][nOrig];
+          orig[campo][nOrig] = orig[campo][destino.n];
+          orig[campo][destino.n] = tmp;
+          db.ref('patio/posiciones/' + pOrig).set(orig);
+          return;
+      }
+
+      const dest = posiciones[destino.pIndex];
+      if (!dest) return;
+      if (dest.tipo !== orig.tipo) return toast('Solo puedes mover filas entre espacios del mismo tipo (Pallet u Objeto).', 'warn', 4000);
+      const libre = dest[campo].findIndex(estaVacia);
+      if (libre === -1) return toast(`El espacio ${dest.id} no tiene filas libres.`, 'warn');
+
+      dest[campo][libre] = orig[campo][nOrig];
+      orig[campo][nOrig] = vacia();
+      db.ref().update({
+          ['patio/posiciones/' + pOrig]: orig,
+          ['patio/posiciones/' + destino.pIndex]: dest
+      }).then(() => toast(`Fila movida de ${orig.id} a ${dest.id} (Fila ${libre + 1}).`, 'ok'));
+  }
+
+  document.addEventListener('pointermove', moverArrastreFila, { passive: false });
+  document.addEventListener('pointerup', soltarArrastreFila);
+  document.addEventListener('pointercancel', soltarArrastreFila);
+  document.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('.posicion')) e.preventDefault(); });
+
   // ===== NUEVO: reiniciar datos del patio (mantiene el mapa/posiciones, borra contenido y el Excel cargado) =====
   function reiniciarPatio() {
       if (!modoAdmin) return;
@@ -959,7 +1306,7 @@
 
       posiciones.forEach(pos => {
           if (pos.tipo === 'pallet') {
-              pos.filas = Array.from({ length: 5 }, () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" }));
+              pos.filas = Array.from({ length: 5 }, filaVacia);
           } else if (pos.tipo === 'objeto') {
               pos.filasObjeto = Array.from({ length: 5 }, () => ({ tipo: "", cant: 0 }));
           }
@@ -991,7 +1338,7 @@
           const div = document.createElement('div');
           let match = false;
           if(busqueda !== "" && pos.tipo === 'pallet'){
-              match = pos.filas.some(f => f.sku.toLowerCase().includes(busqueda));
+              match = pos.filas.some(f => (f.sku || '').toLowerCase().includes(busqueda) || (f.lpn || '').toLowerCase().includes(busqueda));
           }
           div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
           div.dataset.pindex = pIndex;
@@ -1027,7 +1374,12 @@
               b.innerText = pos.tipo === 'pallet' ? (data.sku ? `F${n+1}: ${data.sku}` : `Fila ${n+1}`) : (data.tipo ? `N${n+1}: ${data.tipo}` : `Nivel ${n+1}`);
 
               if(modoAdmin) {
-                  b.onclick = () => pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
+                  b.dataset.fila = n;
+                  b.onclick = () => {
+                      if (Date.now() - filaDrag.ultimoArrastre < 500) return;
+                      pos.tipo === 'pallet' ? abrirModal(pIndex, n) : abrirModalObjeto(pIndex, n);
+                  };
+                  b.addEventListener('pointerdown', (e) => iniciarPresionFila(e, pIndex, n, b));
               }
               detalle.appendChild(b);
           }
@@ -1095,11 +1447,13 @@
       document.getElementById('descripcion').value = d.desc || "";
       document.getElementById('tonalidad').value = d.tono || "";
       document.getElementById('observacion').value = d.obs || "";
+      actualizarHintLpn(d.lpn || "");
       document.getElementById('modalDatos').style.display = 'flex';
   }
 
   // ===== NUEVO: autocompletar SKU, Descripción y Cantidad desde el Excel cargado, al asignar el LPN a un casillero =====
   function autoLlenarDesdeExcel(valorLpn) {
+      actualizarHintLpn(valorLpn);
       const lpnLimpio = valorLpn.trim();
       if (!lpnLimpio) return;
 
@@ -1113,9 +1467,21 @@
 
   function guardarDatos() {
       const { pIndex, nIndex } = editandoContexto;
+      const lpnNuevo = document.getElementById('lpn_num').value.trim();
+      if (lpnNuevo) {
+          for (let i = 0; i < posiciones.length; i++) {
+              const p = posiciones[i];
+              if (p.tipo !== 'pallet' || !p.filas) continue;
+              for (let j = 0; j < p.filas.length; j++) {
+                  if ((i !== pIndex || j !== nIndex) && p.filas[j].lpn === lpnNuevo) {
+                      return alert(`El LPN ${lpnNuevo} ya está registrado en ${p.id} (Fila ${j+1}).`);
+                  }
+              }
+          }
+      }
       const f = posiciones[pIndex].filas[nIndex];
       f.sku = document.getElementById('sku').value;
-      f.lpn = document.getElementById('lpn_num').value;
+      f.lpn = lpnNuevo;
       f.cant = parseInt(document.getElementById('cantidad').value) || 0;
       f.desc = document.getElementById('descripcion').value;
       f.tono = document.getElementById('tonalidad').value;
@@ -1123,25 +1489,186 @@
       db.ref('patio/posiciones/' + pIndex).set(posiciones[pIndex]).then(() => cerrarModal('modalDatos'));
   }
 
+  document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      ['modalDatos', 'modalObjeto', 'modalFotoGrande', 'modalValidacion'].forEach(cerrarModal);
+      if (document.getElementById('modalCamara').style.display === 'flex') cerrarEscaneoCamara();
+  });
+
   function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
-  function cerrarSesion() { location.reload(); }
-  function filtrarTodo() { renderPatio(); }
+  function cerrarSesion() { auth.signOut().finally(() => location.reload()); }
+  const filtrarTodo = debounce(() => renderPatio(), 200);
 
-  // ===== NUEVO: escáner de cámara con html5-qrcode =====
-  function activarPistolaCamara(destino) {
-      contextoEscaneo = destino;
-      document.getElementById('modalCamara').style.display = 'flex';
+  // ===== Escáner de cámara (html5-qrcode) — visor mejorado =====
+  let camaras = [];
+  let camaraIdx = -1;
+  let camaraToken = 0;
+  let cerrandoCamara = Promise.resolve();
+  let codigoTomado = false;
+  let linternaOn = false;
+  let _audioCtx = null;
 
-      html5QrcodeScanner = new Html5Qrcode("lector-camara-contenedor");
-      html5QrcodeScanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 150 } },
-          (codigoDecodificado) => manejarCodigoEscaneado(codigoDecodificado),
-          () => { /* ignorar cuadros sin código detectado */ }
-      ).catch((err) => {
-          alert("No se pudo acceder a la cámara. Revisa los permisos del navegador.\n" + err);
-          cerrarEscaneoCamara();
+  function prepararAudio() {
+      try {
+          _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          if (_audioCtx.state === 'suspended') _audioCtx.resume();
+      } catch (e) {}
+  }
+  function beep(frec = 1200, dur = 0.12) {
+      try {
+          if (!_audioCtx) return;
+          const o = _audioCtx.createOscillator(); const g = _audioCtx.createGain();
+          o.type = 'square'; o.frequency.value = frec; g.gain.value = 0.06;
+          o.connect(g); g.connect(_audioCtx.destination);
+          o.start(); o.stop(_audioCtx.currentTime + dur);
+      } catch (e) {}
+  }
+  function setEstadoCamara(msg, color) {
+      const el = document.getElementById('cam-status');
+      el.textContent = msg; el.style.color = color || '#bbb';
+  }
+  function formatosCamara() {
+      try {
+          const f = Html5QrcodeSupportedFormats;
+          return [f.CODE_128, f.CODE_39, f.CODE_93, f.EAN_13, f.EAN_8, f.UPC_A, f.UPC_E, f.ITF, f.CODABAR, f.QR_CODE, f.DATA_MATRIX].filter(x => x !== undefined);
+      } catch (e) { return undefined; }
+  }
+  function mensajeErrorCamara(err) {
+      const t = String((err && (err.message || err.name)) || err);
+      if (/NotAllowed|Permission/i.test(t)) return '🚫 Sin permiso de cámara. Actívalo en los permisos de la app o del navegador y vuelve a abrir el escáner.';
+      if (/NotFound|no camera/i.test(t)) return 'No se encontró ninguna cámara en este dispositivo.';
+      if (/NotReadable|in use|busy/i.test(t)) return 'La cámara está siendo usada por otra app. Ciérrala e inténtalo de nuevo.';
+      if (!window.isSecureContext) return 'La cámara requiere conexión segura (HTTPS).';
+      return 'No se pudo iniciar la cámara. Puedes escribir el código manualmente.';
+  }
+
+  async function iniciarCamara(origen, token) {
+      const sc = new Html5Qrcode("lector-camara-contenedor", {
+          formatsToSupport: formatosCamara(),
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+          verbose: false
       });
+      html5QrcodeScanner = sc;
+      const base = {
+          fps: 15,
+          disableFlip: true,
+          qrbox: (vw, vh) => ({
+              width: Math.max(50, Math.floor(vw * 0.92)),
+              height: Math.max(50, Math.floor(Math.min(vh * 0.4, 200)))
+          })
+      };
+      const dims = { width: { ideal: 1280 }, height: { ideal: 720 } };
+      const vc = (typeof origen === 'string') ? { deviceId: { exact: origen }, ...dims } : { facingMode: 'environment', ...dims };
+      try {
+          await sc.start(origen, { ...base, videoConstraints: vc }, alLeerCodigo, () => {});
+      } catch (e1) {
+          // Si el dispositivo no acepta la resolución pedida, reintenta con la configuración simple
+          await sc.start(origen, base, alLeerCodigo, () => {});
+      }
+      if (token !== camaraToken) {
+          try { await sc.stop(); sc.clear(); } catch (e) {}
+          if (html5QrcodeScanner === sc) html5QrcodeScanner = null;
+          return false;
+      }
+      configurarControlesCamara(sc);
+      return true;
+  }
+
+  function configurarControlesCamara(sc) {
+      const bt = document.getElementById('btn-linterna');
+      const zw = document.getElementById('cam-zoom-wrap');
+      const zr = document.getElementById('cam-zoom');
+      bt.style.display = 'none'; bt.classList.remove('activo'); zw.style.display = 'none'; linternaOn = false;
+      try {
+          const caps = sc.getRunningTrackCameraCapabilities();
+          if (caps.torchFeature().isSupported()) bt.style.display = '';
+          const z = caps.zoomFeature();
+          if (z.isSupported()) {
+              zr.min = z.min(); zr.max = z.max(); zr.step = z.step() || 0.1;
+              const ini = Math.min(z.max(), Math.max(z.min(), 1.5));
+              zr.value = ini; z.apply(ini);
+              zw.style.display = 'flex';
+          }
+      } catch (e) { /* el dispositivo no expone linterna/zoom */ }
+  }
+
+  async function activarPistolaCamara(destino) {
+      await cerrandoCamara;
+      if (html5QrcodeScanner) return;
+      prepararAudio();
+      contextoEscaneo = destino;
+      codigoTomado = false;
+      const token = ++camaraToken;
+      document.getElementById('cam-titulo').textContent = destino === 'consumo' ? 'Escanear LPN a consumir' : 'Escanear LPN del pallet';
+      document.getElementById('cam-manual-input').value = '';
+      document.getElementById('btn-linterna').style.display = 'none';
+      document.getElementById('cam-zoom-wrap').style.display = 'none';
+      setEstadoCamara('Iniciando cámara…');
+      document.getElementById('modalCamara').style.display = 'flex';
+      try {
+          const ok = await iniciarCamara({ facingMode: 'environment' }, token);
+          if (!ok) return;
+          setEstadoCamara('Apunta al código de barras (15–25 cm). Se lee solo.', '#2ecc71');
+          try {
+              camaras = await Html5Qrcode.getCameras();
+              const i = camaras.findIndex(c => /back|rear|trasera|environment|posterior/i.test(c.label));
+              camaraIdx = i >= 0 ? i : 0;
+          } catch (e) { camaras = []; }
+      } catch (err) {
+          if (token !== camaraToken) return;
+          html5QrcodeScanner = null;
+          setEstadoCamara(mensajeErrorCamara(err), '#e74c3c');
+      }
+  }
+
+  async function cambiarCamara() {
+      if (camaras.length < 2) return toast('No hay otra cámara disponible.', 'warn');
+      const token = ++camaraToken;
+      camaraIdx = (camaraIdx + 1) % camaras.length;
+      setEstadoCamara('Cambiando de cámara…');
+      await detenerCamara();
+      try {
+          const ok = await iniciarCamara(camaras[camaraIdx].id, token);
+          if (ok) setEstadoCamara('Apunta al código de barras.', '#2ecc71');
+      } catch (err) {
+          html5QrcodeScanner = null;
+          setEstadoCamara(mensajeErrorCamara(err), '#e74c3c');
+      }
+  }
+
+  async function alternarLinterna() {
+      try {
+          const t = html5QrcodeScanner.getRunningTrackCameraCapabilities().torchFeature();
+          linternaOn = !linternaOn;
+          await t.apply(linternaOn);
+          document.getElementById('btn-linterna').classList.toggle('activo', linternaOn);
+      } catch (e) {
+          linternaOn = false;
+          toast('Esta cámara no permite usar la linterna.', 'warn');
+      }
+  }
+
+  function aplicarZoom(v) {
+      try { html5QrcodeScanner.getRunningTrackCameraCapabilities().zoomFeature().apply(parseFloat(v)); } catch (e) {}
+  }
+
+  function alLeerCodigo(texto) {
+      const codigo = String(texto || '').trim();
+      if (!codigo || codigoTomado) return;
+      codigoTomado = true;
+      const cont = document.getElementById('lector-camara-contenedor');
+      cont.classList.add('cam-ok');
+      beep();
+      if (navigator.vibrate) navigator.vibrate(80);
+      setEstadoCamara('✅ Leído: ' + codigo, '#2ecc71');
+      setTimeout(() => { cont.classList.remove('cam-ok'); manejarCodigoEscaneado(codigo); }, 250);
+  }
+
+  function usarCodigoManual() {
+      const v = document.getElementById('cam-manual-input').value.trim();
+      if (!v || codigoTomado) return;
+      codigoTomado = true;
+      manejarCodigoEscaneado(v);
   }
 
   function manejarCodigoEscaneado(codigo) {
@@ -1152,18 +1679,177 @@
           document.getElementById('con_lpn').value = codigo;
           autoBuscarLpnEnPatio(codigo);
       }
-      if (navigator.vibrate) navigator.vibrate(80);
       cerrarEscaneoCamara();
   }
 
+  async function detenerCamara() {
+      const sc = html5QrcodeScanner;
+      html5QrcodeScanner = null;
+      linternaOn = false;
+      if (!sc) return;
+      try { if (sc.isScanning) await sc.stop(); } catch (e) {}
+      try { sc.clear(); } catch (e) {}
+  }
+
   function cerrarEscaneoCamara() {
-      if (html5QrcodeScanner) {
-          html5QrcodeScanner.stop()
-              .then(() => html5QrcodeScanner.clear())
-              .catch(() => {})
-              .finally(() => { html5QrcodeScanner = null; });
-      }
+      camaraToken++;
       document.getElementById('modalCamara').style.display = 'none';
+      document.getElementById('lector-camara-contenedor').classList.remove('cam-ok');
+      cerrandoCamara = detenerCamara();
+  }
+
+  // ===== Aviso del LPN dentro del modal de pallet =====
+  function actualizarHintLpn(valor) {
+      const el = document.getElementById('lpn-hint');
+      if (!el) return;
+      const lpn = String(valor || '').trim();
+      if (!lpn) { el.textContent = ''; return; }
+      let dup = null;
+      posiciones.forEach((p, i) => {
+          if (p.tipo !== 'pallet' || !p.filas) return;
+          p.filas.forEach((f, j) => {
+              const esEsta = editandoContexto && editandoContexto.pIndex === i && editandoContexto.nIndex === j;
+              if (f.lpn === lpn && !esEsta) dup = `${p.id} (Fila ${j + 1})`;
+          });
+      });
+      const hayExcel = Object.keys(baseDatosExcel).length > 0;
+      const enExcel = Object.prototype.hasOwnProperty.call(baseDatosExcel, lpn);
+      if (dup) { el.textContent = `⚠️ Ya está registrado en ${dup}`; el.style.color = '#e74c3c'; }
+      else if (enExcel) { el.textContent = '✅ Está en el Excel'; el.style.color = '#2ecc71'; }
+      else if (hayExcel) { el.textContent = '⚠️ No aparece en el Excel'; el.style.color = '#e67e22'; }
+      else { el.textContent = ''; }
+  }
+
+  // ===== Validación: lo que sobra del Excel = no se pistoleó = ya no está en patio =====
+  function calcularValidacion() {
+      const excel = baseDatosExcel || {};
+      const enPatio = new Map();
+      posiciones.forEach(pos => {
+          if (pos.tipo !== 'pallet' || !pos.filas) return;
+          pos.filas.forEach((f, i) => {
+              const l = String(f.lpn || '').trim();
+              if (l) enPatio.set(l, { ubic: `${pos.id} (F${i + 1})`, sku: f.sku || '', cant: Number(f.cant) || 0 });
+          });
+      });
+      const faltantes = []; const sobrantes = []; let ok = 0;
+      Object.entries(excel).forEach(([lpn, d]) => {
+          if (enPatio.has(lpn)) ok++;
+          else faltantes.push({ lpn, sku: d.sku || '', desc: d.desc || '', cant: Number(d.cant) || 0 });
+      });
+      enPatio.forEach((v, lpn) => {
+          if (!Object.prototype.hasOwnProperty.call(excel, lpn)) sobrantes.push({ lpn, sku: v.sku, ubic: v.ubic, cant: v.cant });
+      });
+      faltantes.sort((a, b) => (a.sku + a.lpn).localeCompare(b.sku + b.lpn));
+      return { total: Object.keys(excel).length, ok, faltantes, sobrantes };
+  }
+
+  function actualizarValidacion() {
+      const texto = document.getElementById('val-texto');
+      if (!texto) return;
+      const fill = document.getElementById('val-barra-fill');
+      const btn = document.getElementById('btn-validar');
+      const v = calcularValidacion();
+
+      if (!v.total) {
+          texto.textContent = 'Carga el Excel para validar lo que falta pistolear.';
+          fill.style.width = '0%'; btn.disabled = true; prevFaltantes = null;
+          return;
+      }
+      btn.disabled = false;
+      const pct = Math.round((v.ok / v.total) * 100);
+      texto.innerHTML = `Pistoleados: <b>${v.ok}</b> de <b>${v.total}</b> LPN del Excel (${pct}%) · Faltan <b>${v.faltantes.length}</b>`;
+      fill.style.width = pct + '%';
+      fill.style.background = v.faltantes.length ? 'var(--pallet)' : 'var(--success)';
+
+      if (datosListos.pos && datosListos.excel) {
+          if (prevFaltantes !== null && prevFaltantes > 0 && v.faltantes.length === 0) {
+              toast('🎉 ¡Terminaste! Ya pistoleaste todos los LPN del Excel. No falta ninguno.', 'ok', 8000);
+              beep(900, 0.15); setTimeout(() => beep(1400, 0.2), 200);
+              if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
+          }
+          prevFaltantes = v.faltantes.length;
+      }
+  }
+
+  function abrirValidacion() {
+      const v = calcularValidacion();
+      if (!v.total) return toast('Primero carga el Excel.', 'warn');
+      ultimaValidacion = v;
+
+      document.getElementById('val-resumen').innerHTML =
+          `<div class="val-card">Total en Excel<b>${v.total}</b></div>` +
+          `<div class="val-card">Pistoleados<b style="color:var(--success)">${v.ok}</b></div>` +
+          `<div class="val-card">Faltaron<b style="color:var(--pallet)">${v.faltantes.length}</b></div>` +
+          `<div class="val-card">Sobran en patio<b style="color:var(--accent)">${v.sobrantes.length}</b></div>`;
+
+      document.getElementById('val-faltantes').innerHTML = v.faltantes.length
+          ? v.faltantes.map(f => `<tr><td>${esc(f.lpn)}</td><td>${esc(f.sku)}</td><td>${esc(f.desc)}</td><td class="total-val">${esc(f.cant)}</td></tr>`).join('')
+          : '<tr><td colspan="4" style="text-align:center; color:#2ecc71;">🎉 No falta ningún LPN: todo el Excel fue pistoleado.</td></tr>';
+
+      const porSku = new Map();
+      v.faltantes.forEach(f => {
+          const k = f.sku || '(sin SKU)';
+          const a = porSku.get(k) || { lpns: 0, unid: 0 };
+          a.lpns++; a.unid += f.cant; porSku.set(k, a);
+      });
+      document.getElementById('val-consolidado').innerHTML = porSku.size
+          ? [...porSku.entries()].sort((a, b) => b[1].unid - a[1].unid).map(([k, a]) => `<tr><td>${esc(k)}</td><td class="total-val">${a.lpns}</td><td class="total-val">${a.unid}</td></tr>`).join('')
+          : '<tr><td colspan="3" style="text-align:center; color:#888;">Sin faltantes</td></tr>';
+
+      document.getElementById('val-sobrantes').innerHTML = v.sobrantes.length
+          ? v.sobrantes.map(f => `<tr><td>${esc(f.lpn)}</td><td>${esc(f.sku)}</td><td>${esc(f.ubic)}</td><td class="total-val">${esc(f.cant)}</td></tr>`).join('')
+          : '<tr><td colspan="4" style="text-align:center; color:#888;">Todo lo que hay en patio está en el Excel</td></tr>';
+
+      document.getElementById('modalValidacion').style.display = 'flex';
+  }
+
+  function csvCelda(v) {
+      let t = String(v ?? '');
+      if (/^[=+\-@]/.test(t) && isNaN(Number(t))) t = "'" + t;
+      return '"' + t.replace(/"/g, '""') + '"';
+  }
+
+  function exportarFaltantesCSV() {
+      const v = ultimaValidacion || calcularValidacion();
+      const filas = [['LPN', 'SKU', 'Descripción', 'Cantidad'], ...v.faltantes.map(f => [f.lpn, f.sku, f.desc, f.cant])];
+      const csv = '\uFEFF' + filas.map(r => r.map(csvCelda).join(';')).join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `faltantes_patio_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast('CSV generado. Si estás en la app y no se descarga, usa "Copiar".', 'info', 4000);
+  }
+
+  function copiarFaltantes() {
+      const v = ultimaValidacion || calcularValidacion();
+      const texto = ['LPN\tSKU\tDescripción\tCantidad', ...v.faltantes.map(f => [f.lpn, f.sku, f.desc, f.cant].join('\t'))].join('\n');
+      const ok = () => toast(`📋 ${v.faltantes.length} LPN copiados al portapapeles.`, 'ok');
+      const fallback = () => {
+          const ta = document.createElement('textarea');
+          ta.value = texto; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); ok(); } catch (e) { toast('No se pudo copiar.', 'error'); }
+          ta.remove();
+      };
+      if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(texto).then(ok).catch(fallback);
+      else fallback();
+  }
+
+  function guardarCierreValidacion() {
+      if (!modoAdmin) return;
+      const v = calcularValidacion();
+      if (!v.total) return;
+      if (!confirm(`Se guardará el cierre de validación: ${v.ok} pistoleados y ${v.faltantes.length} LPN faltantes. ¿Continuar?`)) return;
+      db.ref('patio/validaciones').push({
+          timestamp: Date.now(),
+          usuario: document.getElementById('current-username').innerText,
+          total: v.total,
+          pistoleados: v.ok,
+          faltantes: v.faltantes,
+          sobrantes: v.sobrantes
+      }).then(() => toast('✅ Cierre de validación guardado.', 'ok'))
+        .catch(err => toast('No se pudo guardar: ' + err.message, 'error', 5000));
   }
 
   function actualizarTablas() {
@@ -1172,9 +1858,10 @@
           if(pos.tipo === 'pallet') {
               pos.filas.forEach((f, i) => {
                   if(f.sku) {
-                      skus[f.sku] = (skus[f.sku] || 0) + f.cant;
-                      tCant += f.cant; tLpns++;
-                      detalleHtml += `<tr><td>${pos.id} (F${i+1})</td><td>${f.sku}</td><td>${f.tono || '-'}</td><td>${f.cant}</td><td>${f.lpn}</td></tr>`;
+                      const c = Number(f.cant) || 0;
+                      skus[f.sku] = (skus[f.sku] || 0) + c;
+                      tCant += c; tLpns++;
+                      detalleHtml += `<tr><td>${esc(pos.id)} (F${i+1})</td><td>${esc(f.sku)}</td><td>${esc(f.tono || '-')}</td><td>${esc(f.cant)}</td><td>${esc(f.lpn)}</td></tr>`;
                   }
               });
           }
@@ -1182,8 +1869,9 @@
       document.getElementById('res-skus').innerText = Object.keys(skus).length;
       document.getElementById('res-lpns').innerText = tLpns;
       document.getElementById('res-cant').innerText = tCant;
-      document.getElementById('cuerpo-consolidado').innerHTML = Object.entries(skus).map(([s,c])=>`<tr><td>${s}</td><td class="total-val">${c}</td></tr>`).join('');
+      document.getElementById('cuerpo-consolidado').innerHTML = Object.entries(skus).map(([s,c])=>`<tr><td>${esc(s)}</td><td class="total-val">${c}</td></tr>`).join('') || '<tr><td colspan="2" style="text-align:center; color:#888;">Sin datos</td></tr>';
       document.getElementById('cuerpo-detalle').innerHTML = detalleHtml || '<tr><td colspan="5" style="text-align:center">No hay activos registrados</td></tr>';
+      actualizarValidacion();
   }
 </script>
 </body>
