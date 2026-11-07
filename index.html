@@ -367,7 +367,122 @@
         background: #333;
         cursor: pointer;
     }
+
+    /* ===== Tema visual renovado (solo apariencia, sin tocar la lógica) ===== */
+    :root {
+        --bg: #12151a;
+        --sidebar-bg: #171b21;
+        --sidebar-active: rgba(245, 166, 35, 0.12);
+        --card: #1c2128;
+        --text: #e8ecf1;
+        --muted: #8b95a3;
+        --line: #2b323c;
+        --accent: #4aa3df;
+        --pallet: #f5a623;
+        --obstacle: #2a3038;
+        --danger: #e5584c;
+        --success: #3ecf8e;
+        --objeto: #55606e;
+        --radius: 10px;
+    }
+    body { font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 15px; letter-spacing: 0.01em; background: var(--bg); }
+    h1, h2, h3, .titulo-tabla, .sidebar-header { font-family: 'Barlow Condensed', 'Barlow', 'Segoe UI', sans-serif; letter-spacing: 0.03em; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #3a424d; border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    :focus-visible { outline: 2px solid var(--pallet); outline-offset: 2px; }
+
+    /* Login */
+    #login-overlay { background: radial-gradient(circle at 30% 20%, #1e2530 0%, #0d0f13 70%); }
+    .login-box { background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--pallet); border-radius: 14px; width: 340px; padding: 34px 30px; box-shadow: 0 24px 60px rgba(0,0,0,0.55); }
+    .login-box h2 { color: var(--text); font-size: 1.7rem; margin: 0 0 22px; }
+    .login-box input { background: #12151a; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; transition: border-color .15s, box-shadow .15s; }
+    .login-box input:focus, .form-group input:focus, .form-group textarea:focus, .search-input:focus, .cam-manual input:focus { outline: none; border-color: var(--pallet); box-shadow: 0 0 0 3px rgba(245,166,35,0.18); }
+
+    /* Botones */
+    .btn-login { background: var(--pallet); color: #1a1405; border-radius: 8px; font-weight: 700; letter-spacing: 0.02em; transition: filter .15s, transform .1s; }
+    .btn-login:hover:not(:disabled) { filter: brightness(1.08); }
+    .btn-login:active:not(:disabled) { transform: translateY(1px); }
+    .btn-login[style*="--danger"], .btn-login[style*="--success"] { color: #fff; }
+    .cam-btn, .val-acciones button, .btn-scanner-input, .btn-objeto-trigger { transition: filter .15s; }
+    .cam-btn:hover, .val-acciones button:hover, .btn-scanner-input:hover { filter: brightness(1.12); }
+    .btn-scanner-input { background: var(--accent); border-radius: 6px; }
+
+    /* Barra lateral */
+    .sidebar { border-right: 1px solid var(--line); }
+    .sidebar-header { border-bottom: 1px solid var(--line); font-size: 1.45rem; font-weight: 700; padding: 22px 20px; }
+    .sidebar-user { border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
+    .user-avatar { background: var(--pallet); color: #1a1405; }
+    .menu-item { position: relative; border-radius: 8px; color: var(--muted); font-weight: 500; padding: 12px 14px; }
+    .menu-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .menu-item.active { background: var(--sidebar-active); color: var(--pallet); font-weight: 600; }
+    .menu-item.active::before { content: ""; position: absolute; left: -10px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--pallet); }
+
+    /* Contenido y tarjetas */
+    .main-content { padding: 28px; }
+    .tabla-container, .consumo-card, .historial-card, .validacion-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: none; }
+    .consumo-card { border-top: 3px solid var(--danger); }
+    .historial-card { border-top: 3px solid var(--accent); }
+    .titulo-tabla { font-size: 1.35rem; font-weight: 600; margin-bottom: 14px; }
+    .tabla-estilizada th { background: transparent; color: var(--muted); font-size: 0.8rem; font-weight: 600; border-bottom: 1px solid var(--line); padding: 10px 12px; }
+    .tabla-estilizada td { border-bottom: 1px solid #232932; padding: 11px 12px; font-variant-numeric: tabular-nums; }
+    .tabla-estilizada tbody tr:hover td { background: rgba(255,255,255,0.025); }
+    .search-input { background: #12151a; border: 1px solid var(--line); border-radius: 22px; padding: 10px 16px; }
+
+    /* Mapa del patio */
+    .posicion { background: #20262e; border: 1.5px solid #343c47; border-radius: 8px; transition: border-color .15s, background .15s, transform .1s; }
+    .posicion:hover { border-color: var(--pallet); }
+    .posicion.es-objeto { background: var(--objeto) !important; border-color: #7b8794; }
+    .nivel-badge { color: var(--pallet); font-weight: 700; font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-size: 1.35rem; }
+    .id-piso { color: var(--muted); opacity: 1; }
+    .obstaculo { background: repeating-linear-gradient(45deg, #232930, #232930 8px, #1c2128 8px, #1c2128 16px); border: 1px solid var(--line); color: var(--muted); }
+    .detalle-pila { background: #242a33; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 14px 34px rgba(0,0,0,0.55); }
+    .fila-btn { background: #2d343e; border: 1px solid #3a424d; border-radius: 6px; }
+    .fila-btn:hover { background: #36404c; }
+    .fila-btn.con-datos { border-left: 4px solid var(--pallet); }
+    .btn-objeto-trigger { background: #2f6f9f; border: none; border-radius: 6px; }
+    @keyframes parpadeo-busqueda {
+        0%, 100% { background: #20262e; border-color: var(--pallet); box-shadow: 0 0 0 0 rgba(245,166,35,0.5); }
+        50% { background: rgba(245,166,35,0.35); border-color: #fff; box-shadow: 0 0 0 6px rgba(245,166,35,0); }
+    }
+
+    /* Validación */
+    .val-card { background: #161a20; border: 1px solid var(--line); border-radius: 8px; }
+    .val-card b { font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-size: 1.6rem; }
+    .val-barra { background: #12151a; }
+    .val-scroll { border: 1px solid var(--line); }
+    .excel-btn-container { background: rgba(62,207,142,0.12); border: 1px solid rgba(62,207,142,0.45); border-radius: 8px; }
+    .excel-btn-container label { color: var(--success); }
+
+    /* Consumo */
+    .item-baja { background: #161a20; border: 1px solid var(--line); border-left: 4px solid var(--danger); border-radius: 8px; }
+    .btn-foto-disparador { background: #161a20; border: 1px dashed #3a424d; border-radius: 8px; transition: border-color .15s; }
+    .btn-foto-disparador:hover { border-color: var(--pallet); }
+
+    /* Modales y formularios */
+    .modal { background: rgba(8,10,13,0.8); backdrop-filter: blur(3px); }
+    .modal-content { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
+    .form-group label { color: var(--muted); font-size: 0.78rem; font-weight: 500; }
+    .form-group input, .form-group textarea { background: #12151a; border: 1px solid var(--line); border-radius: 8px; transition: border-color .15s, box-shadow .15s; }
+    #lector-camara-contenedor { border: 2px dashed #3a424d; border-radius: 10px; background: #0d0f13; }
+    .cam-btn { background: #2d343e; border: 1px solid #3a424d; border-radius: 8px; }
+    .cam-btn.activo { background: var(--pallet); color: #1a1405; }
+    .cam-x { background: #2d343e; }
+
+    /* Avisos y menú móvil */
+    .toast { background: #242a33; border: 1px solid var(--line); border-left-width: 4px; border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.5); }
+    #btn-menu-movil { background: var(--pallet); color: #1a1405; border-radius: 10px; }
+
+    @media (max-width: 768px) {
+        .main-content { padding: 14px; padding-top: 70px; }
+        .menu-item.active::before { left: -8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -646,6 +761,39 @@
   let abiertoId = null;
   let posiciones = [];
   let baseDatosExcel = {};
+  let indicePale = {};
+
+  // ===== Códigos: quita "=", comillas, espacios y símbolos; todo en mayúsculas =====
+  function normCod(v) { return String(v == null ? '' : v).replace(/[^A-Za-z0-9]/g, '').toUpperCase(); }
+  function limpiarId(v) { return String(v == null ? '' : v).replace(/^\s*=/, '').replace(/["']/g, '').trim(); }
+  function numeroSeguro(v) { const n = parseFloat(limpiarId(v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : Math.round(n); }
+  function arreglarTexto(t) { t = String(t == null ? '' : t); if (/Ã./.test(t)) { try { return decodeURIComponent(escape(t)); } catch (e) {} } return t; }
+  // Acepta el LPN o el Número de Pallet y devuelve siempre el LPN limpio
+  function resolverLpn(v) {
+      const c = normCod(v);
+      if (!c) return '';
+      if (baseDatosExcel[c]) return c;
+      if (indicePale[c]) return indicePale[c];
+      return c;
+  }
+  function coincideCodigo(lpnFila, busqueda) {
+      const b = normCod(busqueda); if (!b) return false;
+      const l = resolverLpn(lpnFila);
+      if (l.includes(b)) return true;
+      const d = baseDatosExcel[l];
+      return !!(d && d.pale && d.pale.includes(b));
+  }
+  function normalizarBase(raw) {
+      const base = {}, pales = {};
+      Object.entries(raw || {}).forEach(([k, v]) => {
+          const lpn = normCod(k); if (!lpn) return;
+          v = v || {};
+          const pale = normCod(v.pale);
+          base[lpn] = { sku: limpiarId(v.sku), desc: arreglarTexto(v.desc), cant: numeroSeguro(v.cant), pale: pale };
+          if (pale) pales[pale] = lpn;
+      });
+      return { base, pales };
+  }
   let fotoBase64Global = "";
   let editandoContexto = null;
   let editandoContextoObjeto = null;
@@ -732,14 +880,14 @@
   }));
 
   function autoBuscarLpnEnPatio(valorLpn) {
-      const lpnLimpio = valorLpn.trim();
+      const lpnLimpio = resolverLpn(valorLpn);
       if(!lpnLimpio) { limpiarCamposLectura(); return; }
 
       let encontrado = false;
       posiciones.forEach((pos) => {
           if (pos.tipo === 'pallet' && pos.filas) {
               pos.filas.forEach((fila, idx) => {
-                  if (fila.lpn === lpnLimpio) {
+                  if (resolverLpn(fila.lpn) === lpnLimpio) {
                       document.getElementById('con_sku').value = fila.sku || "Sin SKU";
                       document.getElementById('con_cant').value = fila.cant || 0;
                       document.getElementById('con_ubicacion').value = `${pos.id} (Fila ${idx+1})`;
@@ -787,7 +935,7 @@
   let bajaEnCurso = false;
   function ejecutarBajaConsumo() {
       if (!modoAdmin || bajaEnCurso) return;
-      const lpn = document.getElementById('con_lpn').value.trim();
+      const lpn = resolverLpn(document.getElementById('con_lpn').value);
       const sku = document.getElementById('con_sku').value;
       const cant = document.getElementById('con_cant').value;
       const ubicacion = document.getElementById('con_ubicacion').value;
@@ -807,7 +955,7 @@
       posiciones.forEach((pos, pIdx) => {
           if (pos.tipo === 'pallet' && pos.filas) {
               pos.filas.forEach((fila, fIdx) => {
-                  if (fila.lpn === lpn) {
+                  if (resolverLpn(fila.lpn) === lpn) {
                       posiciones[pIdx].filas[fIdx] = filaVacia();
                       modificado = true;
                       posIndexAfectado = pIdx;
@@ -981,25 +1129,34 @@
           const contenido = evt.target.result;
           const lineas = contenido.split(/\r?\n/);
           if (lineas.length < 2) return;
-          const sep = lineas[0].includes(';') ? ';' : ',';
-          const columnas = parsearLineaCSV(lineas[0].replace(/^\uFEFF/, ''), sep);
-          const idxLpn = columnas.indexOf('Número de LPN');
-          const idxSku = columnas.indexOf('SKU');
-          const idxDesc = columnas.indexOf('Descripción de artículo');
-          const idxCant = columnas.indexOf('Un Actual');
+          const cab = lineas[0].replace(/^\uFEFF/, '');
+          const sep = [';', '\t', ','].map(c => [c, cab.split(c).length]).sort((x, y) => y[1] - x[1])[0][0];
+          const columnas = parsearLineaCSV(cab, sep);
+          const hn = columnas.map(c => String(c).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+          const idxLpn = hn.findIndex(h => /lpn/.test(h));
+          const idxSku = hn.findIndex(h => h === 'sku');
+          const idxDesc = hn.findIndex(h => /^descrip/.test(h));
+          const idxCant = hn.findIndex(h => /^unact/.test(h));
+          let idxPale = hn.findIndex((h, i) => i !== idxLpn && /^n.*pal/.test(h));
+          if (idxPale === -1) idxPale = hn.findIndex((h, i) => i !== idxLpn && /pal/.test(h));
 
-          if (idxLpn === -1 || idxSku === -1 || idxDesc === -1 || idxCant === -1) return alert("Columnas incorrectas");
+          if (idxLpn === -1 || idxSku === -1 || idxDesc === -1 || idxCant === -1) return alert("Columnas incorrectas: se necesitan Número de LPN, SKU, Descripción de artículo y Un Actual.");
 
-          baseDatosExcel = {};
+          const crudo = {};
           let total = 0;
           for (let i = 1; i < lineas.length; i++) {
               if (!lineas[i].trim()) continue;
               const celdas = parsearLineaCSV(lineas[i], sep);
-              if (celdas[idxLpn] && !/[.#$\[\]\/]/.test(celdas[idxLpn])) {
-                  baseDatosExcel[celdas[idxLpn]] = { sku: celdas[idxSku] || "", desc: celdas[idxDesc] || "", cant: parseInt(celdas[idxCant]) || 0 };
+              const lpn = normCod(celdas[idxLpn]);
+              if (lpn) {
+                  crudo[lpn] = { sku: limpiarId(celdas[idxSku]), desc: arreglarTexto(celdas[idxDesc]), cant: numeroSeguro(celdas[idxCant]), pale: idxPale === -1 ? '' : normCod(celdas[idxPale]) };
                   total++;
               }
           }
+          const norm = normalizarBase(crudo);
+          baseDatosExcel = norm.base;
+          indicePale = norm.pales;
+          if (idxPale === -1) toast('⚠️ El Excel no tiene la columna Número de Pallet; solo se podrá buscar por LPN.', 'warn', 6000);
           document.getElementById('excel-status').innerText = `✅ ${total} LPNs listos.`;
           db.ref('patio/excel_datos').set(baseDatosExcel);
       };
@@ -1009,9 +1166,11 @@
   // Cargar la base de datos del Excel guardada en Firebase (persiste entre recargas y dispositivos)
   alAutenticar(() => db.ref('patio/excel_datos').on('value', (snapshot) => {
       const data = snapshot.val();
-      baseDatosExcel = data || {};
+      const norm = normalizarBase(data);
+      baseDatosExcel = norm.base;
+      indicePale = norm.pales;
       datosListos.excel = true;
-      document.getElementById('excel-status').innerText = data ? `✅ ${Object.keys(data).length} LPNs listos.` : '';
+      document.getElementById('excel-status').innerText = data ? `✅ ${Object.keys(baseDatosExcel).length} LPNs listos.` : '';
       actualizarValidacion();
   }));
 
@@ -1317,6 +1476,7 @@
       db.ref('patio/posiciones').set(posiciones);
       db.ref('patio/excel_datos').remove();
       baseDatosExcel = {};
+      indicePale = {};
       document.getElementById('excel-status').innerText = '';
 
       alert("✅ Datos del patio reiniciados. El mapa quedó vacío, listo para volver a cargar.");
@@ -1338,7 +1498,7 @@
           const div = document.createElement('div');
           let match = false;
           if(busqueda !== "" && pos.tipo === 'pallet'){
-              match = pos.filas.some(f => (f.sku || '').toLowerCase().includes(busqueda) || (f.lpn || '').toLowerCase().includes(busqueda));
+              match = pos.filas.some(f => (f.sku || '').toLowerCase().includes(busqueda) || coincideCodigo(f.lpn, busqueda));
           }
           div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
           div.dataset.pindex = pIndex;
@@ -1442,7 +1602,7 @@
       editandoContexto = { pIndex: p, nIndex: n };
       const d = posiciones[p].filas[n];
       document.getElementById('sku').value = d.sku || "";
-      document.getElementById('lpn_num').value = d.lpn || "";
+      document.getElementById('lpn_num').value = resolverLpn(d.lpn);
       document.getElementById('cantidad').value = d.cant || 0;
       document.getElementById('descripcion').value = d.desc || "";
       document.getElementById('tonalidad').value = d.tono || "";
@@ -1454,7 +1614,7 @@
   // ===== NUEVO: autocompletar SKU, Descripción y Cantidad desde el Excel cargado, al asignar el LPN a un casillero =====
   function autoLlenarDesdeExcel(valorLpn) {
       actualizarHintLpn(valorLpn);
-      const lpnLimpio = valorLpn.trim();
+      const lpnLimpio = resolverLpn(valorLpn);
       if (!lpnLimpio) return;
 
       const datos = baseDatosExcel[lpnLimpio];
@@ -1467,13 +1627,13 @@
 
   function guardarDatos() {
       const { pIndex, nIndex } = editandoContexto;
-      const lpnNuevo = document.getElementById('lpn_num').value.trim();
+      const lpnNuevo = resolverLpn(document.getElementById('lpn_num').value);
       if (lpnNuevo) {
           for (let i = 0; i < posiciones.length; i++) {
               const p = posiciones[i];
               if (p.tipo !== 'pallet' || !p.filas) continue;
               for (let j = 0; j < p.filas.length; j++) {
-                  if ((i !== pIndex || j !== nIndex) && p.filas[j].lpn === lpnNuevo) {
+                  if ((i !== pIndex || j !== nIndex) && resolverLpn(p.filas[j].lpn) === lpnNuevo) {
                       return alert(`El LPN ${lpnNuevo} ya está registrado en ${p.id} (Fila ${j+1}).`);
                   }
               }
@@ -1673,10 +1833,10 @@
 
   function manejarCodigoEscaneado(codigo) {
       if (contextoEscaneo === 'mapa') {
-          document.getElementById('lpn_num').value = codigo;
+          document.getElementById('lpn_num').value = resolverLpn(codigo);
           autoLlenarDesdeExcel(codigo);
       } else if (contextoEscaneo === 'consumo') {
-          document.getElementById('con_lpn').value = codigo;
+          document.getElementById('con_lpn').value = resolverLpn(codigo);
           autoBuscarLpnEnPatio(codigo);
       }
       cerrarEscaneoCamara();
@@ -1702,20 +1862,20 @@
   function actualizarHintLpn(valor) {
       const el = document.getElementById('lpn-hint');
       if (!el) return;
-      const lpn = String(valor || '').trim();
+      const lpn = resolverLpn(valor);
       if (!lpn) { el.textContent = ''; return; }
       let dup = null;
       posiciones.forEach((p, i) => {
           if (p.tipo !== 'pallet' || !p.filas) return;
           p.filas.forEach((f, j) => {
               const esEsta = editandoContexto && editandoContexto.pIndex === i && editandoContexto.nIndex === j;
-              if (f.lpn === lpn && !esEsta) dup = `${p.id} (Fila ${j + 1})`;
+              if (resolverLpn(f.lpn) === lpn && !esEsta) dup = `${p.id} (Fila ${j + 1})`;
           });
       });
       const hayExcel = Object.keys(baseDatosExcel).length > 0;
       const enExcel = Object.prototype.hasOwnProperty.call(baseDatosExcel, lpn);
       if (dup) { el.textContent = `⚠️ Ya está registrado en ${dup}`; el.style.color = '#e74c3c'; }
-      else if (enExcel) { el.textContent = '✅ Está en el Excel'; el.style.color = '#2ecc71'; }
+      else if (enExcel) { el.textContent = normCod(valor) !== lpn ? `✅ Pallet ${normCod(valor)} → LPN ${lpn}` : '✅ Está en el Excel'; el.style.color = '#2ecc71'; }
       else if (hayExcel) { el.textContent = '⚠️ No aparece en el Excel'; el.style.color = '#e67e22'; }
       else { el.textContent = ''; }
   }
@@ -1727,7 +1887,7 @@
       posiciones.forEach(pos => {
           if (pos.tipo !== 'pallet' || !pos.filas) return;
           pos.filas.forEach((f, i) => {
-              const l = String(f.lpn || '').trim();
+              const l = resolverLpn(f.lpn);
               if (l) enPatio.set(l, { ubic: `${pos.id} (F${i + 1})`, sku: f.sku || '', cant: Number(f.cant) || 0 });
           });
       });
