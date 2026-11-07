@@ -511,14 +511,14 @@
   <div class="sidebar-menu">
     <div class="menu-item active" id="menu-mapa" onclick="mostrarSeccion('menu-mapa')">🏠 Mapa de Patio</div>
     <div class="menu-item" id="menu-activos" onclick="mostrarSeccion('menu-activos')">⚙️ Objetos y Activos</div>
-    <div class="menu-item" id="menu-consumo" onclick="mostrarSeccion('menu-consumo')">📉 LPN a Consumir</div>
+    <div class="menu-item view-only-hidden" id="menu-consumo" onclick="mostrarSeccion('menu-consumo')">📉 LPN a Consumir</div>
     <div class="menu-item" style="color: var(--danger);" onclick="cerrarSesion()">🚪 Salir</div>
   </div>
 </div>
 
 <div class="main-content">
   <div class="search-container">
-    <input type="text" id="global-search" class="search-input" placeholder="🔍 Buscar SKU o LPN..." oninput="filtrarTodo()">
+    <input type="text" id="global-search" class="search-input" placeholder="🔍 Buscar SKU, LPN, pallet o ubicación..." oninput="filtrarTodo()">
   </div>
 
   <!-- SECCIÓN 1: MAPA -->
@@ -535,7 +535,7 @@
       <div style="width:100%; font-size:0.72rem; color:#888;">💡 Mantén presionado un casillero para moverlo. Mantén presionada una fila (dentro del casillero abierto) para cambiarla de lugar o llevarla a otro casillero.</div>
     </div>
 
-    <div class="validacion-card">
+    <div class="validacion-card view-only-hidden">
       <div class="val-info">
         <div id="val-texto">Carga el Excel para validar lo que falta pistolear.</div>
         <div class="val-barra"><div id="val-barra-fill"></div></div>
@@ -595,7 +595,7 @@
       <div class="consumo-card">
         <div class="form-group">
           <label>Código o LPN a dar de baja</label>
-          <input type="text" id="con_lpn" class="has-btn" placeholder="Escanee o escriba el LPN..." oninput="autoBuscarLpnEnPatio(this.value)">
+          <input type="text" id="con_lpn" class="has-btn" placeholder="Escanee o escriba el LPN o Pallet..." oninput="autoBuscarLpnEnPatio(this.value)">
           <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara('consumo')">📷 Cámara</button>
         </div>
         <div class="form-group">
@@ -700,7 +700,7 @@
 <div id="modalDatos" class="modal"><div class="modal-content">
   <h3>Info Pallet</h3>
   <div class="form-group">
-    <label>LPN</label>
+    <label>LPN o Pallet</label>
     <input type="text" id="lpn_num" class="has-btn" oninput="autoLlenarDesdeExcel(this.value)">
     <button class="btn-scanner-input view-only-hidden" onclick="activarPistolaCamara('mapa')">📷 Cámara</button>
     <small id="lpn-hint" style="display:block; margin-top:4px; font-size:0.72rem; min-height:1em;"></small>
@@ -768,20 +768,47 @@
   function limpiarId(v) { return String(v == null ? '' : v).replace(/^\s*=/, '').replace(/["']/g, '').trim(); }
   function numeroSeguro(v) { const n = parseFloat(limpiarId(v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : Math.round(n); }
   function arreglarTexto(t) { t = String(t == null ? '' : t); if (/Ã./.test(t)) { try { return decodeURIComponent(escape(t)); } catch (e) {} } return t; }
-  // Acepta el LPN o el Número de Pallet y devuelve siempre el LPN limpio
-  function resolverLpn(v) {
+  // Un pallet (palé) guarda varios LPN; un LPN puede traer varios SKU (ya sumados al cargar el Excel)
+  function resolverLpn(v) { return normCod(v); }
+  function infoCodigo(v) {
       const c = normCod(v);
-      if (!c) return '';
-      if (baseDatosExcel[c]) return c;
-      if (indicePale[c]) return indicePale[c];
-      return c;
+      if (!c) return { tipo: '', cod: '' };
+      if (baseDatosExcel[c]) return { tipo: 'lpn', cod: c };
+      if (indicePale[c]) return { tipo: 'pale', cod: c };
+      return { tipo: 'desconocido', cod: c };
   }
-  function coincideCodigo(lpnFila, busqueda) {
+  function datosPale(c) {
+      const lpns = indicePale[c] || [];
+      const skus = [], descs = []; let cant = 0;
+      lpns.forEach(l => {
+          const d = baseDatosExcel[l]; if (!d) return;
+          String(d.sku || '').split(' / ').forEach(x => { if (x && !skus.includes(x)) skus.push(x); });
+          String(d.desc || '').split(' | ').forEach(x => { if (x && !descs.includes(x)) descs.push(x); });
+          cant += Number(d.cant) || 0;
+      });
+      return { sku: skus.join(' / '), desc: descs.join(' | '), cant, nLpn: lpns.length };
+  }
+  // LPN que cubre una fila del mapa: si se registró un pallet, son todos sus LPN
+  function lpnsDe(f) {
+      const fp = normCod(f.pale);
+      if (fp) return (indicePale[fp] || [fp]).slice();
+      const fl = normCod(f.lpn);
+      return fl ? [fl] : [];
+  }
+  function clavesFila(f) {
+      const fp = normCod(f.pale);
+      return fp ? [fp, ...(indicePale[fp] || [])] : (normCod(f.lpn) ? [normCod(f.lpn)] : []);
+  }
+  function coincideCodigo(f, busqueda) {
       const b = normCod(busqueda); if (!b) return false;
-      const l = resolverLpn(lpnFila);
-      if (l.includes(b)) return true;
-      const d = baseDatosExcel[l];
-      return !!(d && d.pale && d.pale.includes(b));
+      const fl = normCod(f.lpn);
+      const claves = [fl, normCod(f.pale), ...clavesFila(f)];
+      if (fl && baseDatosExcel[fl] && baseDatosExcel[fl].pale) claves.push(baseDatosExcel[fl].pale);
+      return claves.some(k => k && k.includes(b));
+  }
+  function etiquetaSku(sku) {
+      const partes = String(sku || '').split(' / ').filter(Boolean);
+      return partes.length > 1 ? `${partes[0]} +${partes.length - 1}` : (partes[0] || '');
   }
   function normalizarBase(raw) {
       const base = {}, pales = {};
@@ -790,7 +817,7 @@
           v = v || {};
           const pale = normCod(v.pale);
           base[lpn] = { sku: limpiarId(v.sku), desc: arreglarTexto(v.desc), cant: numeroSeguro(v.cant), pale: pale };
-          if (pale) pales[pale] = lpn;
+          if (pale) (pales[pale] = pales[pale] || []).push(lpn);
       });
       return { base, pales };
   }
@@ -830,7 +857,7 @@
       setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, ms);
   }
 
-  const filaVacia = () => ({ lpn: "", sku: "", desc: "", cant: 0, tono: "", obs: "" });
+  const filaVacia = () => ({ lpn: "", pale: "", sku: "", desc: "", cant: 0, tono: "", obs: "" });
 
   function alternarMenuMovil() {
       document.querySelector('.sidebar').classList.toggle('abierto');
@@ -879,29 +906,42 @@
       });
   }));
 
-  function autoBuscarLpnEnPatio(valorLpn) {
-      const lpnLimpio = resolverLpn(valorLpn);
-      if(!lpnLimpio) { limpiarCamposLectura(); return; }
-
-      let encontrado = false;
-      posiciones.forEach((pos) => {
-          if (pos.tipo === 'pallet' && pos.filas) {
-              pos.filas.forEach((fila, idx) => {
-                  if (resolverLpn(fila.lpn) === lpnLimpio) {
-                      document.getElementById('con_sku').value = fila.sku || "Sin SKU";
-                      document.getElementById('con_cant').value = fila.cant || 0;
-                      document.getElementById('con_ubicacion').value = `${pos.id} (Fila ${idx+1})`;
-                      encontrado = true;
-                  }
-              });
-          }
+  function buscarEnPatio(valor) {
+      const info = infoCodigo(valor); const hits = [];
+      if (!info.cod) return { info, hits };
+      const delPale = info.tipo === 'pale' ? new Set(indicePale[info.cod]) : null;
+      posiciones.forEach((pos, pIdx) => {
+          if (pos.tipo !== 'pallet' || !pos.filas) return;
+          pos.filas.forEach((f, fIdx) => {
+              const fp = normCod(f.pale), fl = normCod(f.lpn); let t = '';
+              if (fp === info.cod) t = 'exacto';
+              else if (delPale) { if (!fp && delPale.has(fl)) t = 'exacto'; }
+              else if (!fp && fl === info.cod) t = 'exacto';
+              else if (fp && (indicePale[fp] || []).includes(info.cod)) t = 'dentro';
+              if (t) hits.push({ pIdx, fIdx, id: pos.id, t, f });
+          });
       });
+      return { info, hits };
+  }
 
-      if(!encontrado) {
+  function autoBuscarLpnEnPatio(valorLpn) {
+      const { info, hits } = buscarEnPatio(valorLpn);
+      if (!info.cod) { limpiarCamposLectura(); return; }
+      if (!hits.length) {
           document.getElementById('con_sku').value = "No encontrado en patio";
           document.getElementById('con_cant').value = "0";
           document.getElementById('con_ubicacion').value = "Desconocida";
+          return;
       }
+      const skus = []; let cant = 0;
+      hits.forEach(h => {
+          if (h.t === 'exacto') { cant += Number(h.f.cant) || 0; String(h.f.sku || '').split(' / ').forEach(x => { if (x && !skus.includes(x)) skus.push(x); }); }
+      });
+      if (!skus.length) { const d = baseDatosExcel[info.cod]; if (d) { skus.push(d.sku); cant = d.cant; } }
+      const dentro = hits.some(h => h.t === 'dentro');
+      document.getElementById('con_sku').value = skus.join(' / ') || "Sin SKU";
+      document.getElementById('con_cant').value = cant;
+      document.getElementById('con_ubicacion').value = hits.map(h => `${h.id} (Fila ${h.fIdx + 1})`).join(', ') + (dentro ? ' · dentro de un pallet' : '');
   }
 
   function previsualizarFotoConsumo(input) {
@@ -935,7 +975,8 @@
   let bajaEnCurso = false;
   function ejecutarBajaConsumo() {
       if (!modoAdmin || bajaEnCurso) return;
-      const lpn = resolverLpn(document.getElementById('con_lpn').value);
+      const busq = buscarEnPatio(document.getElementById('con_lpn').value);
+      const lpn = busq.info.cod;
       const sku = document.getElementById('con_sku').value;
       const cant = document.getElementById('con_cant').value;
       const ubicacion = document.getElementById('con_ubicacion').value;
@@ -946,22 +987,19 @@
       if (document.getElementById('con_ubicacion').value === "Desconocida") {
           if (!confirm("Este LPN no está en el mapa del patio. ¿Registrar la baja de todos modos?")) return;
       }
+      if (busq.hits.length && !busq.hits.some(h => h.t === 'exacto')) {
+          if (!confirm("Este LPN está dentro de un pallet registrado en el mapa. Se registrará la baja, pero la fila del pallet NO se borra (ajústala a mano). ¿Continuar?")) return;
+      }
       bajaEnCurso = true;
 
-      let posIndexAfectado = null;
+      const posAfectadas = new Set();
       let modificado = false;
 
       // Borrar físicamente del mapa logístico en tiempo real
-      posiciones.forEach((pos, pIdx) => {
-          if (pos.tipo === 'pallet' && pos.filas) {
-              pos.filas.forEach((fila, fIdx) => {
-                  if (resolverLpn(fila.lpn) === lpn) {
-                      posiciones[pIdx].filas[fIdx] = filaVacia();
-                      modificado = true;
-                      posIndexAfectado = pIdx;
-                  }
-              });
-          }
+      busq.hits.filter(h => h.t === 'exacto').forEach(h => {
+          posiciones[h.pIdx].filas[h.fIdx] = filaVacia();
+          modificado = true;
+          posAfectadas.add(h.pIdx);
       });
 
       // Crear objeto del historial
@@ -977,9 +1015,7 @@
 
       // Guardar en el historial de Firebase
       db.ref('patio/historial_bajas').push(registroBaja).then(() => {
-          if(modificado && posIndexAfectado !== null) {
-              db.ref('patio/posiciones/' + posIndexAfectado).set(posiciones[posIndexAfectado]);
-          }
+          if (modificado) posAfectadas.forEach(i => db.ref('patio/posiciones/' + i).set(posiciones[i]));
           alert(`✅ Consumo guardado e historial actualizado con fotografía para el LPN: ${lpn}`);
           limpiarFormularioConsumo();
       }).catch(err => {
@@ -1096,6 +1132,7 @@
   });
 
   function mostrarSeccion(id) {
+      if (id === 'menu-consumo' && !modoAdmin) id = 'menu-mapa';
       document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
 
       if(id === 'menu-mapa') document.getElementById('mapa-seccion').classList.add('active');
@@ -1112,7 +1149,12 @@
       const out = []; let cur = ''; let q = false;
       for (let i = 0; i < linea.length; i++) {
           const ch = linea[i];
-          if (ch === '"') { if (q && linea[i+1] === '"') { cur += '"'; i++; } else q = !q; }
+          if (ch === '"') {
+              // Las comillas solo abren al inicio de la celda (o tras "="); una comilla suelta, como en 3/4" o 1/2", es texto
+              if (q) { if (linea[i+1] === '"') { cur += '"'; i++; } else q = false; }
+              else if (cur === '' || cur === '=') q = true;
+              else cur += ch;
+          }
           else if (ch === sep && !q) { out.push(cur.trim()); cur = ''; }
           else cur += ch;
       }
@@ -1149,8 +1191,15 @@
               const celdas = parsearLineaCSV(lineas[i], sep);
               const lpn = normCod(celdas[idxLpn]);
               if (lpn) {
-                  crudo[lpn] = { sku: limpiarId(celdas[idxSku]), desc: arreglarTexto(celdas[idxDesc]), cant: numeroSeguro(celdas[idxCant]), pale: idxPale === -1 ? '' : normCod(celdas[idxPale]) };
-                  total++;
+                  const it = { sku: limpiarId(celdas[idxSku]), desc: arreglarTexto(celdas[idxDesc]), cant: numeroSeguro(celdas[idxCant]), pale: idxPale === -1 ? '' : normCod(celdas[idxPale]) };
+                  const prev = crudo[lpn];
+                  if (!prev) { crudo[lpn] = it; total++; }
+                  else {
+                      if (it.sku && !prev.sku.split(' / ').includes(it.sku)) prev.sku += ' / ' + it.sku;
+                      if (it.desc && !prev.desc.split(' | ').includes(it.desc)) prev.desc += ' | ' + it.desc;
+                      prev.cant += it.cant;
+                      if (!prev.pale) prev.pale = it.pale;
+                  }
               }
           }
           const norm = normalizarBase(crudo);
@@ -1411,7 +1460,7 @@
       const orig = posiciones[pOrig];
       if (!orig) return;
       const campo = orig.tipo === 'pallet' ? 'filas' : 'filasObjeto';
-      const estaVacia = (f) => orig.tipo === 'pallet' ? (!f.sku && !f.lpn) : !f.tipo;
+      const estaVacia = (f) => orig.tipo === 'pallet' ? (!f.sku && !f.lpn && !f.pale) : !f.tipo;
       const vacia = () => orig.tipo === 'pallet' ? filaVacia() : { tipo: "", cant: 0 };
 
       if (!orig[campo] || estaVacia(orig[campo][nOrig])) return toast('Esa fila está vacía, no hay nada que mover.', 'warn');
@@ -1498,7 +1547,7 @@
           const div = document.createElement('div');
           let match = false;
           if(busqueda !== "" && pos.tipo === 'pallet'){
-              match = pos.filas.some(f => (f.sku || '').toLowerCase().includes(busqueda) || coincideCodigo(f.lpn, busqueda));
+              match = pos.filas.some(f => (f.sku || '').toLowerCase().includes(busqueda) || coincideCodigo(f, busqueda));
           }
           div.className = `posicion ${pos.tipo === 'objeto' ? 'es-objeto' : ''} ${match ? 'encontrado' : ''}`;
           div.dataset.pindex = pIndex;
@@ -1531,7 +1580,7 @@
               const b = document.createElement('button');
               const data = pos.tipo === 'pallet' ? pos.filas[n] : pos.filasObjeto[n];
               b.className = `fila-btn ${pos.tipo === 'pallet' ? (data.sku ? 'con-datos' : '') : (data.tipo ? 'objeto-datos' : '')}`;
-              b.innerText = pos.tipo === 'pallet' ? (data.sku ? `F${n+1}: ${data.sku}` : `Fila ${n+1}`) : (data.tipo ? `N${n+1}: ${data.tipo}` : `Nivel ${n+1}`);
+              b.innerText = pos.tipo === 'pallet' ? (data.sku ? `F${n+1}: ${etiquetaSku(data.sku)}` : `Fila ${n+1}`) : (data.tipo ? `N${n+1}: ${data.tipo}` : `Nivel ${n+1}`);
 
               if(modoAdmin) {
                   b.dataset.fila = n;
@@ -1602,22 +1651,21 @@
       editandoContexto = { pIndex: p, nIndex: n };
       const d = posiciones[p].filas[n];
       document.getElementById('sku').value = d.sku || "";
-      document.getElementById('lpn_num').value = resolverLpn(d.lpn);
+      document.getElementById('lpn_num').value = normCod(d.pale) || normCod(d.lpn);
       document.getElementById('cantidad').value = d.cant || 0;
       document.getElementById('descripcion').value = d.desc || "";
       document.getElementById('tonalidad').value = d.tono || "";
       document.getElementById('observacion').value = d.obs || "";
-      actualizarHintLpn(d.lpn || "");
+      actualizarHintLpn(d.pale || d.lpn || "");
       document.getElementById('modalDatos').style.display = 'flex';
   }
 
   // ===== NUEVO: autocompletar SKU, Descripción y Cantidad desde el Excel cargado, al asignar el LPN a un casillero =====
   function autoLlenarDesdeExcel(valorLpn) {
       actualizarHintLpn(valorLpn);
-      const lpnLimpio = resolverLpn(valorLpn);
-      if (!lpnLimpio) return;
-
-      const datos = baseDatosExcel[lpnLimpio];
+      const info = infoCodigo(valorLpn);
+      if (!info.cod) return;
+      const datos = info.tipo === 'lpn' ? baseDatosExcel[info.cod] : (info.tipo === 'pale' ? datosPale(info.cod) : null);
       if (datos) {
           document.getElementById('sku').value = datos.sku || "";
           document.getElementById('descripcion').value = datos.desc || "";
@@ -1627,21 +1675,24 @@
 
   function guardarDatos() {
       const { pIndex, nIndex } = editandoContexto;
-      const lpnNuevo = resolverLpn(document.getElementById('lpn_num').value);
+      const info = infoCodigo(document.getElementById('lpn_num').value);
+      const lpnNuevo = info.cod;
       if (lpnNuevo) {
+          const nuevas = new Set(info.tipo === 'pale' ? [lpnNuevo, ...(indicePale[lpnNuevo] || [])] : [lpnNuevo]);
           for (let i = 0; i < posiciones.length; i++) {
               const p = posiciones[i];
               if (p.tipo !== 'pallet' || !p.filas) continue;
               for (let j = 0; j < p.filas.length; j++) {
-                  if ((i !== pIndex || j !== nIndex) && resolverLpn(p.filas[j].lpn) === lpnNuevo) {
-                      return alert(`El LPN ${lpnNuevo} ya está registrado en ${p.id} (Fila ${j+1}).`);
+                  if ((i !== pIndex || j !== nIndex) && clavesFila(p.filas[j]).some(k => nuevas.has(k))) {
+                      return alert(`${info.tipo === 'pale' ? 'El pallet' : 'El LPN'} ${lpnNuevo} ya está registrado (o incluido en un pallet) en ${p.id} (Fila ${j+1}).`);
                   }
               }
           }
       }
       const f = posiciones[pIndex].filas[nIndex];
       f.sku = document.getElementById('sku').value;
-      f.lpn = lpnNuevo;
+      f.pale = info.tipo === 'pale' ? lpnNuevo : '';
+      f.lpn = info.tipo === 'pale' ? '' : lpnNuevo;
       f.cant = parseInt(document.getElementById('cantidad').value) || 0;
       f.desc = document.getElementById('descripcion').value;
       f.tono = document.getElementById('tonalidad').value;
@@ -1657,7 +1708,7 @@
 
   function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
   function cerrarSesion() { auth.signOut().finally(() => location.reload()); }
-  const filtrarTodo = debounce(() => renderPatio(), 200);
+  const filtrarTodo = debounce(() => { renderPatio(); actualizarTablas(); }, 200);
 
   // ===== Escáner de cámara (html5-qrcode) — visor mejorado =====
   let camaras = [];
@@ -1833,10 +1884,10 @@
 
   function manejarCodigoEscaneado(codigo) {
       if (contextoEscaneo === 'mapa') {
-          document.getElementById('lpn_num').value = resolverLpn(codigo);
+          document.getElementById('lpn_num').value = normCod(codigo);
           autoLlenarDesdeExcel(codigo);
       } else if (contextoEscaneo === 'consumo') {
-          document.getElementById('con_lpn').value = resolverLpn(codigo);
+          document.getElementById('con_lpn').value = normCod(codigo);
           autoBuscarLpnEnPatio(codigo);
       }
       cerrarEscaneoCamara();
@@ -1862,21 +1913,23 @@
   function actualizarHintLpn(valor) {
       const el = document.getElementById('lpn-hint');
       if (!el) return;
-      const lpn = resolverLpn(valor);
+      const info = infoCodigo(valor);
+      const lpn = info.cod;
       if (!lpn) { el.textContent = ''; return; }
+      const nuevas = new Set(info.tipo === 'pale' ? [lpn, ...(indicePale[lpn] || [])] : [lpn]);
       let dup = null;
       posiciones.forEach((p, i) => {
           if (p.tipo !== 'pallet' || !p.filas) return;
           p.filas.forEach((f, j) => {
               const esEsta = editandoContexto && editandoContexto.pIndex === i && editandoContexto.nIndex === j;
-              if (resolverLpn(f.lpn) === lpn && !esEsta) dup = `${p.id} (Fila ${j + 1})`;
+              if (!esEsta && clavesFila(f).some(k => nuevas.has(k))) dup = `${p.id} (Fila ${j + 1})`;
           });
       });
       const hayExcel = Object.keys(baseDatosExcel).length > 0;
-      const enExcel = Object.prototype.hasOwnProperty.call(baseDatosExcel, lpn);
       if (dup) { el.textContent = `⚠️ Ya está registrado en ${dup}`; el.style.color = '#e74c3c'; }
-      else if (enExcel) { el.textContent = normCod(valor) !== lpn ? `✅ Pallet ${normCod(valor)} → LPN ${lpn}` : '✅ Está en el Excel'; el.style.color = '#2ecc71'; }
-      else if (hayExcel) { el.textContent = '⚠️ No aparece en el Excel'; el.style.color = '#e67e22'; }
+      else if (info.tipo === 'pale') { el.textContent = `✅ Pallet con ${(indicePale[lpn] || []).length} LPN del Excel`; el.style.color = '#2ecc71'; }
+      else if (info.tipo === 'lpn') { const pl = baseDatosExcel[lpn].pale; el.textContent = '✅ Está en el Excel' + (pl ? ` · Pallet ${pl}` : ''); el.style.color = '#2ecc71'; }
+      else if (hayExcel) { el.textContent = '⚠️ No aparece en el Excel (ni como LPN ni como pallet)'; el.style.color = '#e67e22'; }
       else { el.textContent = ''; }
   }
 
@@ -1887,8 +1940,10 @@
       posiciones.forEach(pos => {
           if (pos.tipo !== 'pallet' || !pos.filas) return;
           pos.filas.forEach((f, i) => {
-              const l = resolverLpn(f.lpn);
-              if (l) enPatio.set(l, { ubic: `${pos.id} (F${i + 1})`, sku: f.sku || '', cant: Number(f.cant) || 0 });
+              lpnsDe(f).forEach(l => {
+                  const d = baseDatosExcel[l];
+                  enPatio.set(l, { ubic: `${pos.id} (F${i + 1})`, sku: d ? d.sku : (f.sku || ''), cant: d ? d.cant : (Number(f.cant) || 0) });
+              });
           });
       });
       const faltantes = []; const sobrantes = []; let ok = 0;
@@ -1922,7 +1977,7 @@
       fill.style.background = v.faltantes.length ? 'var(--pallet)' : 'var(--success)';
 
       if (datosListos.pos && datosListos.excel) {
-          if (prevFaltantes !== null && prevFaltantes > 0 && v.faltantes.length === 0) {
+          if (modoAdmin && prevFaltantes !== null && prevFaltantes > 0 && v.faltantes.length === 0) {
               toast('🎉 ¡Terminaste! Ya pistoleaste todos los LPN del Excel. No falta ninguno.', 'ok', 8000);
               beep(900, 0.15); setTimeout(() => beep(1400, 0.2), 200);
               if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
@@ -2014,14 +2069,20 @@
 
   function actualizarTablas() {
       let skus = {}; let tCant = 0; let tLpns = 0; let detalleHtml = '';
+      // El buscador de arriba también filtra esta pestaña (SKU, LPN, pallet, ubicación, tono, descripción o cantidad exacta)
+      const q = (document.getElementById('global-search').value || '').trim().toLowerCase();
+      const coincide = (pos, f) => !q
+          || (f.sku || '').toLowerCase().includes(q) || (f.tono || '').toLowerCase().includes(q)
+          || (f.desc || '').toLowerCase().includes(q) || String(pos.id).toLowerCase().includes(q)
+          || String(f.cant) === q || coincideCodigo(f, q);
       posiciones.forEach(pos => {
           if(pos.tipo === 'pallet') {
               pos.filas.forEach((f, i) => {
-                  if(f.sku) {
+                  if(f.sku && coincide(pos, f)) {
                       const c = Number(f.cant) || 0;
                       skus[f.sku] = (skus[f.sku] || 0) + c;
                       tCant += c; tLpns++;
-                      detalleHtml += `<tr><td>${esc(pos.id)} (F${i+1})</td><td>${esc(f.sku)}</td><td>${esc(f.tono || '-')}</td><td>${esc(f.cant)}</td><td>${esc(f.lpn)}</td></tr>`;
+                      detalleHtml += `<tr><td>${esc(pos.id)} (F${i+1})</td><td>${esc(f.sku)}</td><td>${esc(f.tono || '-')}</td><td>${esc(f.cant)}</td><td>${esc(f.lpn || f.pale)}</td></tr>`;
                   }
               });
           }
@@ -2030,7 +2091,7 @@
       document.getElementById('res-lpns').innerText = tLpns;
       document.getElementById('res-cant').innerText = tCant;
       document.getElementById('cuerpo-consolidado').innerHTML = Object.entries(skus).map(([s,c])=>`<tr><td>${esc(s)}</td><td class="total-val">${c}</td></tr>`).join('') || '<tr><td colspan="2" style="text-align:center; color:#888;">Sin datos</td></tr>';
-      document.getElementById('cuerpo-detalle').innerHTML = detalleHtml || '<tr><td colspan="5" style="text-align:center">No hay activos registrados</td></tr>';
+      document.getElementById('cuerpo-detalle').innerHTML = detalleHtml || `<tr><td colspan="5" style="text-align:center">${q ? 'Sin resultados para «' + esc(q) + '»' : 'No hay activos registrados'}</td></tr>`;
       actualizarValidacion();
   }
 </script>
